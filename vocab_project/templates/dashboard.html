@@ -235,8 +235,12 @@ async function loadDashboardStats() {
             apiRequest('/api/topics/')
         ]);
 
-        const vocab = await vocabRes.json();
-        const topics = await topicsRes.json();
+        const vocabData = await vocabRes.json();
+        const topicsData = await topicsRes.json();
+
+        // Handle paginated response for vocabulary
+        const vocab = Array.isArray(vocabData) ? vocabData : (vocabData.results || []);
+        const topics = Array.isArray(topicsData) ? topicsData : (topicsData.results || []);
 
         document.getElementById('totalVocab').textContent = vocab.length;
         document.getElementById('masteredVocab').textContent = vocab.filter(v => v.learning_status === 'mastered').length;
@@ -250,7 +254,10 @@ async function loadDashboardStats() {
 async function loadRecentVocabulary() {
     try {
         const response = await apiRequest('/api/vocabulary/');
-        const vocab = await response.json();
+        const vocabData = await response.json();
+
+        // Handle paginated response
+        const vocab = Array.isArray(vocabData) ? vocabData : (vocabData.results || []);
 
         const container = document.getElementById('recentVocab');
 

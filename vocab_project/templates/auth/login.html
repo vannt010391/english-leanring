@@ -49,6 +49,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const submitBtn = document.querySelector('.btn-primary');
+    const originalBtnHtml = submitBtn.innerHTML;
+
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
 
     try {
         const response = await fetch('/api/auth/login/', {
@@ -62,14 +68,29 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const data = await response.json();
 
         if (response.ok) {
+            // Show success icon
+            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Login successful!';
+            submitBtn.style.backgroundColor = '#10b981';
+            
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            window.location.href = '{% url "dashboard" %}';
+            
+            // Show toast success message
+            showToast('Login successful! Redirecting...', 'success');
+            
+            // Redirect after a short delay to show the success state
+            setTimeout(() => {
+                window.location.href = '{% url "dashboard" %}';
+            }, 500);
         } else {
             showToast(data.error || 'Login failed', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
         }
     } catch (error) {
         showToast('Network error. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
     }
 });
 </script>
