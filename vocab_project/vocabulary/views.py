@@ -203,7 +203,11 @@ class VocabularyViewSet(viewsets.ModelViewSet):
                     level = level if level in valid_levels else None
 
                     # Check if word already exists (case-insensitive match)
-                    existing_vocab = Vocabulary.objects.filter(word__iexact=word).first()
+                    try:
+                        existing_vocab = Vocabulary.objects.filter(word__iexact=word).first()
+                    except Exception:
+                        # Fallback for SQLite: use case-sensitive lookup
+                        existing_vocab = Vocabulary.objects.filter(word=word).first()
 
                     if existing_vocab:
                         # Word exists - just add new topics to it
