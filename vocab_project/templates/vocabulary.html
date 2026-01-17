@@ -1,0 +1,1089 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vocabulary - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item" data-page="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item active" data-page="vocabulary">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" data-page="topics">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+            </div>
+            <a href="{% url 'learning_plans' %}" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plans</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice</span>
+            </a>
+            <a href="{% url 'analytics' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search vocabulary..." id="searchInput">
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-toggle-btn" id="listViewBtn" onclick="setView('list')" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+                <button class="header-btn" onclick="openImportModal()" title="Import CSV">
+                    <i class="fas fa-file-import"></i>
+                </button>
+                <button class="header-btn" onclick="openAddVocabModal()" title="Add Vocabulary">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header d-flex justify-between align-center">
+                <div>
+                    <h1 class="page-title">Vocabulary</h1>
+                    <p class="page-subtitle">Manage your vocabulary collection</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <select class="form-control" id="filterTopic" onchange="filterVocabulary()" style="width: auto;">
+                        <option value="">All Topics</option>
+                    </select>
+                    <select class="form-control" id="filterStatus" onchange="filterVocabulary()" style="width: auto;">
+                        <option value="">All Status</option>
+                        <option value="new">New</option>
+                        <option value="learning">Learning</option>
+                        <option value="mastered">Mastered</option>
+                    </select>
+                    <select class="form-control" id="filterWordType" onchange="filterVocabulary()" style="width: auto;">
+                        <option value="">All Word Types</option>
+                        <option value="noun">Noun</option>
+                        <option value="verb">Verb</option>
+                        <option value="adjective">Adjective</option>
+                        <option value="adverb">Adverb</option>
+                        <option value="preposition">Preposition</option>
+                        <option value="conjunction">Conjunction</option>
+                        <option value="pronoun">Pronoun</option>
+                        <option value="interjection">Interjection</option>
+                        <option value="phrase">Phrase</option>
+                        <option value="idiom">Idiom</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select class="form-control" id="filterLevel" onchange="filterVocabulary()" style="width: auto;">
+                        <option value="">All Levels</option>
+                        <option value="A1">A1</option>
+                        <option value="A2">A2</option>
+                        <option value="B1">B1</option>
+                        <option value="B2">B2</option>
+                        <option value="C1">C1</option>
+                        <option value="C2">C2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Vocabulary Container -->
+            <div class="vocab-container" id="vocabContainer">
+                <div class="vocab-grid" id="vocabGrid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="vocab-list hidden" id="vocabList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" id="paginationContainer">
+                <div class="pagination-info" id="paginationInfo"></div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Vocabulary Modal -->
+<div class="modal-overlay" id="addVocabModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="vocabModalTitle">Add New Vocabulary</h3>
+            <button class="modal-close" onclick="closeModal('addVocabModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <form id="addVocabForm">
+                <input type="hidden" id="vocabId">
+
+                <!-- Row 1: Word and Phonetics -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="word">Word *</label>
+                        <input type="text" class="form-control" id="word" name="word" placeholder="e.g., apple" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="phonetics">Phonetics</label>
+                        <input type="text" class="form-control" id="phonetics" name="phonetics" placeholder="e.g., /ˈæpl/">
+                    </div>
+                </div>
+
+                <!-- Row 2: Meaning -->
+                <div class="form-group">
+                    <label class="form-label" for="meaning">Meaning (English) *</label>
+                    <textarea class="form-control" id="meaning" name="meaning" placeholder="Enter the English meaning" required rows="2"></textarea>
+                </div>
+
+                <!-- Row 3: Vietnamese Meaning -->
+                <div class="form-group">
+                    <label class="form-label" for="meaning_vi">Meaning (Vietnamese)</label>
+                    <textarea class="form-control" id="meaning_vi" name="meaning_vi" placeholder="Nhập nghĩa tiếng Việt" rows="2"></textarea>
+                </div>
+
+                <!-- Row 4: Type and Level -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="word_type">Word Type</label>
+                        <select class="form-control" id="word_type" name="word_type">
+                            <option value="">-- Select Type --</option>
+                            <option value="noun">Noun</option>
+                            <option value="verb">Verb</option>
+                            <option value="adjective">Adjective</option>
+                            <option value="adverb">Adverb</option>
+                            <option value="preposition">Preposition</option>
+                            <option value="conjunction">Conjunction</option>
+                            <option value="pronoun">Pronoun</option>
+                            <option value="interjection">Interjection</option>
+                            <option value="phrase">Phrase</option>
+                            <option value="idiom">Idiom</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="level">Level</label>
+                        <select class="form-control" id="level" name="level">
+                            <option value="">-- Select Level --</option>
+                            <option value="A1">A1 - Beginner</option>
+                            <option value="A2">A2 - Elementary</option>
+                            <option value="B1">B1 - Intermediate</option>
+                            <option value="B2">B2 - Upper Intermediate</option>
+                            <option value="C1">C1 - Advanced</option>
+                            <option value="C2">C2 - Proficiency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 5: Example Sentence -->
+                <div class="form-group">
+                    <label class="form-label" for="example_sentence">Example Sentence</label>
+                    <textarea class="form-control" id="example_sentence" name="example_sentence" placeholder="Use the word in a sentence" rows="2"></textarea>
+                </div>
+
+                <!-- Row 6: Note -->
+                <div class="form-group">
+                    <label class="form-label" for="note">Note</label>
+                    <textarea class="form-control" id="note" name="note" placeholder="Additional notes or context" rows="2"></textarea>
+                </div>
+
+                <!-- Row 7: Topics -->
+                <div class="form-group">
+                    <label class="form-label" for="topic_ids">Topics</label>
+                    <select class="form-control" id="topic_ids" name="topic_ids" multiple style="min-height: 80px;">
+                    </select>
+                    <span class="form-text">Hold Ctrl/Cmd to select multiple topics</span>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addVocabModal')">Cancel</button>
+            <button class="btn btn-primary" id="vocabSubmitBtn" onclick="submitVocab()">
+                <i class="fas fa-plus"></i> Add Vocabulary
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal" style="max-width: 550px;">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-file-csv" style="color: var(--success);"></i> Import Vocabulary from CSV</h3>
+            <button class="modal-close" onclick="closeModal('importModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- CSV Format Info -->
+            <div style="background: var(--gray-50); border-radius: var(--radius-lg); padding: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--gray-200);">
+                <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--gray-700);">
+                    <i class="fas fa-info-circle" style="color: var(--info);"></i> CSV Format Requirements
+                </h4>
+                <p style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.75rem;">
+                    Your CSV file should have the following columns:
+                </p>
+                <div style="background: white; border-radius: var(--radius); padding: 0.75rem; font-family: monospace; font-size: 0.75rem; overflow-x: auto; line-height: 1.8;">
+                    <span style="color: var(--primary); font-weight: 600;">word</span>,<span style="color: var(--primary); font-weight: 600;">meaning</span>,<span style="color: var(--gray-500);">meaning_vi</span>,<span style="color: var(--gray-500);">phonetics</span>,<span style="color: var(--gray-500);">note</span>,<span style="color: var(--gray-500);">example_sentence</span>,<span style="color: var(--gray-500);">type</span>,<span style="color: var(--gray-500);">level</span>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.5rem;">
+                    <strong>Required:</strong> word, meaning<br>
+                    <strong>Optional:</strong> meaning_vi, phonetics, note, example_sentence, type, level
+                </p>
+                <p style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">
+                    <strong>Type:</strong> noun, verb, adjective, adverb, preposition, etc.<br>
+                    <strong>Level:</strong> A1, A2, B1, B2, C1, C2
+                </p>
+                <a href="{% static 'sample_vocabulary.csv' %}" download class="btn btn-sm btn-outline" style="margin-top: 0.75rem;">
+                    <i class="fas fa-download"></i> Download Sample CSV
+                </a>
+            </div>
+
+            <form id="importForm">
+                <div class="form-group">
+                    <label class="form-label">Select CSV File *</label>
+                    <div class="file-upload" id="fileUpload">
+                        <input type="file" id="csvFile" accept=".csv" onchange="handleFileSelect(this)">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <p class="file-upload-text">Drop your CSV file here or click to browse</p>
+                        <p class="file-upload-hint">Maximum file size: 5MB</p>
+                    </div>
+                    <p id="selectedFileName" class="form-text mt-2"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Assign to Topics (Optional)</label>
+                    <select class="form-control" id="importTopics" multiple style="min-height: 80px;">
+                    </select>
+                    <span class="form-text">Hold Ctrl/Cmd to select multiple topics</span>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+            <button class="btn btn-primary" id="importBtn" onclick="submitImport()">
+                <i class="fas fa-file-import"></i> Import Vocabulary
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Result Modal -->
+<div class="modal-overlay" id="importResultModal">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="importResultTitle">Import Results</h3>
+            <button class="modal-close" onclick="closeModal('importResultModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="importResultBody">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeModal('importResultModal')">Done</button>
+        </div>
+    </div>
+</div>
+
+<!-- View/Edit Vocabulary Modal -->
+<div class="modal-overlay" id="viewVocabModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="viewVocabWord">Word</h3>
+            <button class="modal-close" onclick="closeModal('viewVocabModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="viewVocabContent">
+        </div>
+        <div class="modal-footer" id="viewVocabFooter">
+        </div>
+    </div>
+</div>
+
+<script>
+let allVocabulary = [];
+let currentUser = null;
+let currentView = 'grid';
+let currentPage = 1;
+let totalPages = 1;
+let totalCount = 0;
+let searchTimeout = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadUserInfo();
+    loadTopics();
+    loadVocabulary();
+    setupFileUpload();
+    setupSearchDebounce();
+
+    // Load saved view preference
+    const savedView = localStorage.getItem('vocabView') || 'grid';
+    setView(savedView, false);
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+function loadUserInfo() {
+    currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userName').textContent = currentUser.username || 'User';
+    document.getElementById('userRole').textContent = currentUser.role || 'learner';
+    document.getElementById('userAvatar').textContent = (currentUser.username || 'U')[0].toUpperCase();
+}
+
+function setupSearchDebounce() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.removeAttribute('onkeyup');
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentPage = 1;
+            loadVocabulary();
+        }, 300);
+    });
+}
+
+async function loadTopics() {
+    try {
+        const response = await apiRequest('/api/topics/');
+        const topics = await response.json();
+
+        const selects = ['topic_ids', 'filterTopic', 'importTopics'];
+        selects.forEach(id => {
+            const select = document.getElementById(id);
+            if (id === 'filterTopic') {
+                select.innerHTML = '<option value="">All Topics</option>' +
+                    topics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+            } else {
+                select.innerHTML = topics.map(t =>
+                    `<option value="${t.id}">${escapeHtml(t.name)}</option>`
+                ).join('');
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load topics:', error);
+    }
+}
+
+function buildQueryParams() {
+    const params = new URLSearchParams();
+    params.append('page', currentPage);
+
+    const search = document.getElementById('searchInput').value.trim();
+    const topicFilter = document.getElementById('filterTopic').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+    const wordTypeFilter = document.getElementById('filterWordType').value;
+    const levelFilter = document.getElementById('filterLevel').value;
+
+    if (search) params.append('search', search);
+    if (topicFilter) params.append('topic', topicFilter);
+    if (statusFilter) params.append('status', statusFilter);
+    if (wordTypeFilter) params.append('word_type', wordTypeFilter);
+    if (levelFilter) params.append('level', levelFilter);
+
+    return params.toString();
+}
+
+async function loadVocabulary() {
+    try {
+        showLoading();
+        const queryString = buildQueryParams();
+        const response = await apiRequest(`/api/vocabulary/?${queryString}`);
+        const data = await response.json();
+
+        // Handle paginated response
+        if (data.results) {
+            allVocabulary = data.results;
+            totalCount = data.count;
+            totalPages = Math.ceil(data.count / 20);
+        } else {
+            // Fallback for non-paginated response
+            allVocabulary = data;
+            totalCount = data.length;
+            totalPages = 1;
+        }
+
+        renderVocabulary(allVocabulary);
+        renderPagination();
+    } catch (error) {
+        console.error('Failed to load vocabulary:', error);
+    }
+}
+
+function showLoading() {
+    const gridContainer = document.getElementById('vocabGrid');
+    const listContainer = document.getElementById('vocabList');
+    const loadingHTML = '<div class="loading"><div class="spinner"></div></div>';
+    gridContainer.innerHTML = loadingHTML;
+    listContainer.innerHTML = loadingHTML;
+}
+
+function filterVocabulary() {
+    currentPage = 1;
+    loadVocabulary();
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadVocabulary();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPagination() {
+    const paginationInfo = document.getElementById('paginationInfo');
+    const pagination = document.getElementById('pagination');
+    const container = document.getElementById('paginationContainer');
+
+    if (totalCount === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'flex';
+
+    const startItem = (currentPage - 1) * 20 + 1;
+    const endItem = Math.min(currentPage * 20, totalCount);
+    paginationInfo.innerHTML = `Showing <strong>${startItem}-${endItem}</strong> of <strong>${totalCount}</strong> words`;
+
+    let paginationHTML = '';
+
+    // Previous button
+    paginationHTML += `
+        <button class="pagination-btn nav-btn ${currentPage === 1 ? 'disabled' : ''}"
+                onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i>
+            <span class="btn-text">Prev</span>
+        </button>
+    `;
+
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+        paginationHTML += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}"
+                    onclick="goToPage(${i})">${i}</button>
+        `;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        }
+        paginationHTML += `<button class="pagination-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    }
+
+    // Next button
+    paginationHTML += `
+        <button class="pagination-btn nav-btn ${currentPage === totalPages ? 'disabled' : ''}"
+                onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+            <span class="btn-text">Next</span>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+
+    pagination.innerHTML = paginationHTML;
+}
+
+function setView(view, reload = true) {
+    currentView = view;
+    localStorage.setItem('vocabView', view);
+
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    const gridContainer = document.getElementById('vocabGrid');
+    const listContainer = document.getElementById('vocabList');
+
+    if (view === 'grid') {
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        gridContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+    } else {
+        gridBtn.classList.remove('active');
+        listBtn.classList.add('active');
+        gridContainer.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+    }
+
+    // Re-render current data (no API call needed)
+    if (reload && allVocabulary.length > 0) {
+        renderVocabulary(allVocabulary);
+    }
+}
+
+function renderVocabulary(vocab) {
+    const gridContainer = document.getElementById('vocabGrid');
+    const listContainer = document.getElementById('vocabList');
+
+    if (vocab.length === 0) {
+        const emptyState = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon"><i class="fas fa-book-open"></i></div>
+                <h3>No vocabulary found</h3>
+                <p>Try adjusting your filters or add new vocabulary</p>
+                <button class="btn btn-primary" onclick="openAddVocabModal()">
+                    <i class="fas fa-plus"></i> Add Vocabulary
+                </button>
+            </div>
+        `;
+        gridContainer.innerHTML = emptyState;
+        listContainer.innerHTML = emptyState;
+        return;
+    }
+
+    // Render grid view
+    gridContainer.innerHTML = vocab.map(v => createVocabCard(v)).join('');
+
+    // Render list view
+    listContainer.innerHTML = createVocabTable(vocab);
+}
+
+function createVocabCard(vocab) {
+    const topics = vocab.topics.map(t => `<span class="badge badge-primary">${escapeHtml(t.name)}</span>`).join('');
+    const canEdit = currentUser.role === 'admin' || (!vocab.is_system && vocab.owner === currentUser.id);
+
+    // Level badge color
+    const levelColors = {
+        'A1': 'success', 'A2': 'success',
+        'B1': 'warning', 'B2': 'warning',
+        'C1': 'danger', 'C2': 'danger'
+    };
+
+    return `
+        <div class="vocab-card" data-id="${vocab.id}">
+            <div class="vocab-card-header">
+                <div>
+                    <span class="vocab-word">${escapeHtml(vocab.word)}</span>
+                    ${vocab.phonetics ? `<span style="font-size: 0.85rem; font-weight: 400; opacity: 0.9; margin-left: 0.5rem;">${escapeHtml(vocab.phonetics)}</span>` : ''}
+                </div>
+                <button class="vocab-speak-btn" onclick="speakWord('${escapeHtml(vocab.word)}')">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+            <div class="vocab-card-body">
+                <!-- Word type and level badges -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                    ${vocab.word_type ? `<span class="badge badge-info" style="text-transform: capitalize;">${escapeHtml(vocab.word_type)}</span>` : ''}
+                    ${vocab.level ? `<span class="badge badge-${levelColors[vocab.level] || 'primary'}">${vocab.level}</span>` : ''}
+                    ${vocab.is_system ? '<span class="badge badge-primary">System</span>' : ''}
+                </div>
+
+                <!-- English meaning -->
+                <p class="vocab-meaning">${escapeHtml(vocab.meaning)}</p>
+
+                <!-- Vietnamese meaning -->
+                ${vocab.meaning_vi ? `
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        <i class="fas fa-language" style="color: var(--primary); margin-right: 0.25rem;"></i>
+                        ${escapeHtml(vocab.meaning_vi)}
+                    </p>
+                ` : ''}
+
+                <!-- Example sentence -->
+                ${vocab.example_sentence ? `<p class="vocab-example">"${escapeHtml(vocab.example_sentence)}"</p>` : ''}
+
+                <!-- Note -->
+                ${vocab.note ? `
+                    <p style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--gray-200);">
+                        <i class="fas fa-sticky-note" style="margin-right: 0.25rem;"></i>
+                        ${escapeHtml(vocab.note)}
+                    </p>
+                ` : ''}
+            </div>
+            <div class="vocab-card-footer">
+                <div class="vocab-meta">
+                    <div class="status-selector">
+                        <button class="status-btn ${vocab.learning_status === 'new' ? 'active new' : ''}"
+                                onclick="updateStatus(${vocab.id}, 'new')">New</button>
+                        <button class="status-btn ${vocab.learning_status === 'learning' ? 'active learning' : ''}"
+                                onclick="updateStatus(${vocab.id}, 'learning')">Learning</button>
+                        <button class="status-btn ${vocab.learning_status === 'mastered' ? 'active mastered' : ''}"
+                                onclick="updateStatus(${vocab.id}, 'mastered')">Mastered</button>
+                    </div>
+                </div>
+                <div class="vocab-actions">
+                    ${canEdit ? `
+                        <button class="btn btn-icon btn-secondary btn-sm" onclick="editVocab(${vocab.id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-icon btn-danger btn-sm" onclick="deleteVocab(${vocab.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+            ${topics ? `<div style="padding: 0.5rem 1.5rem 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">${topics}</div>` : ''}
+        </div>
+    `;
+}
+
+function createVocabTable(vocab) {
+    const levelColors = {
+        'A1': 'success', 'A2': 'success',
+        'B1': 'warning', 'B2': 'warning',
+        'C1': 'danger', 'C2': 'danger'
+    };
+
+    const statusColors = {
+        'new': 'info',
+        'learning': 'warning',
+        'mastered': 'success'
+    };
+
+    return `
+        <div class="vocab-table-wrapper">
+            <table class="vocab-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;"></th>
+                        <th>Word</th>
+                        <th>Meaning</th>
+                        <th>Vietnamese</th>
+                        <th>Type</th>
+                        <th>Level</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${vocab.map(v => {
+                        const canEdit = currentUser.role === 'admin' || (!v.is_system && v.owner === currentUser.id);
+                        return `
+                            <tr class="vocab-row" data-id="${v.id}">
+                                <td>
+                                    <button class="btn btn-icon btn-secondary btn-sm" onclick="speakWord('${escapeHtml(v.word)}')" title="Pronounce">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                </td>
+                                <td>
+                                    <div class="vocab-row-word">
+                                        <strong>${escapeHtml(v.word)}</strong>
+                                        ${v.phonetics ? `<span class="vocab-row-phonetics">${escapeHtml(v.phonetics)}</span>` : ''}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="vocab-row-meaning">${escapeHtml(v.meaning)}</div>
+                                    ${v.example_sentence ? `<div class="vocab-row-example">"${escapeHtml(v.example_sentence)}"</div>` : ''}
+                                </td>
+                                <td>
+                                    ${v.meaning_vi ? `<span class="vocab-row-vi">${escapeHtml(v.meaning_vi)}</span>` : '<span class="text-muted">-</span>'}
+                                </td>
+                                <td>
+                                    ${v.word_type ? `<span class="badge badge-info" style="text-transform: capitalize;">${escapeHtml(v.word_type)}</span>` : '<span class="text-muted">-</span>'}
+                                </td>
+                                <td>
+                                    ${v.level ? `<span class="badge badge-${levelColors[v.level] || 'primary'}">${v.level}</span>` : '<span class="text-muted">-</span>'}
+                                </td>
+                                <td>
+                                    <select class="form-control form-control-sm status-select" onchange="updateStatus(${v.id}, this.value)" style="min-width: 100px;">
+                                        <option value="new" ${v.learning_status === 'new' ? 'selected' : ''}>New</option>
+                                        <option value="learning" ${v.learning_status === 'learning' ? 'selected' : ''}>Learning</option>
+                                        <option value="mastered" ${v.learning_status === 'mastered' ? 'selected' : ''}>Mastered</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        ${canEdit ? `
+                                            <button class="btn btn-icon btn-secondary btn-sm" onclick="editVocab(${v.id})" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-icon btn-danger btn-sm" onclick="deleteVocab(${v.id})" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function updateStatus(id, status) {
+    try {
+        const response = await apiRequest(`/api/vocabulary/${id}/update_status/`, {
+            method: 'PATCH',
+            body: JSON.stringify({ learning_status: status })
+        });
+
+        if (response.ok) {
+            const vocab = allVocabulary.find(v => v.id === id);
+            if (vocab) vocab.learning_status = status;
+            renderVocabulary(allVocabulary);
+            showToast('Status updated', 'success');
+        }
+    } catch (error) {
+        showToast('Failed to update status', 'error');
+    }
+}
+
+function openAddVocabModal() {
+    document.getElementById('vocabModalTitle').textContent = 'Add New Vocabulary';
+    document.getElementById('vocabSubmitBtn').innerHTML = '<i class="fas fa-plus"></i> Add Vocabulary';
+    document.getElementById('addVocabForm').reset();
+    document.getElementById('vocabId').value = '';
+    document.getElementById('addVocabModal').classList.add('active');
+}
+
+function editVocab(id) {
+    const vocab = allVocabulary.find(v => v.id === id);
+    if (!vocab) return;
+
+    document.getElementById('vocabModalTitle').textContent = 'Edit Vocabulary';
+    document.getElementById('vocabSubmitBtn').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    document.getElementById('vocabId').value = id;
+    document.getElementById('word').value = vocab.word;
+    document.getElementById('phonetics').value = vocab.phonetics || '';
+    document.getElementById('meaning').value = vocab.meaning;
+    document.getElementById('meaning_vi').value = vocab.meaning_vi || '';
+    document.getElementById('word_type').value = vocab.word_type || '';
+    document.getElementById('level').value = vocab.level || '';
+    document.getElementById('example_sentence').value = vocab.example_sentence || '';
+    document.getElementById('note').value = vocab.note || '';
+
+    const select = document.getElementById('topic_ids');
+    Array.from(select.options).forEach(opt => {
+        opt.selected = vocab.topics.some(t => t.id == opt.value);
+    });
+
+    document.getElementById('addVocabModal').classList.add('active');
+}
+
+async function submitVocab() {
+    const vocabId = document.getElementById('vocabId').value;
+    const form = document.getElementById('addVocabForm');
+    const formData = new FormData(form);
+
+    const data = {
+        word: formData.get('word'),
+        phonetics: formData.get('phonetics') || null,
+        meaning: formData.get('meaning'),
+        meaning_vi: formData.get('meaning_vi') || null,
+        word_type: formData.get('word_type') || null,
+        level: formData.get('level') || null,
+        example_sentence: formData.get('example_sentence') || null,
+        note: formData.get('note') || null,
+        topic_ids: Array.from(document.getElementById('topic_ids').selectedOptions).map(o => parseInt(o.value))
+    };
+
+    try {
+        const url = vocabId ? `/api/vocabulary/${vocabId}/` : '/api/vocabulary/';
+        const method = vocabId ? 'PUT' : 'POST';
+
+        const response = await apiRequest(url, {
+            method,
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showToast(vocabId ? 'Vocabulary updated!' : 'Vocabulary added!', 'success');
+            closeModal('addVocabModal');
+            form.reset();
+            loadVocabulary();
+        } else {
+            const error = await response.json();
+            showToast(Object.values(error).flat()[0] || 'Failed to save vocabulary', 'error');
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+async function deleteVocab(id) {
+    if (!confirm('Are you sure you want to delete this vocabulary?')) return;
+
+    try {
+        const response = await apiRequest(`/api/vocabulary/${id}/`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showToast('Vocabulary deleted', 'success');
+            allVocabulary = allVocabulary.filter(v => v.id !== id);
+            filterVocabulary();
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Failed to delete', 'error');
+        }
+    } catch (error) {
+        showToast('Network error', 'error');
+    }
+}
+
+function openImportModal() {
+    document.getElementById('importModal').classList.add('active');
+}
+
+function setupFileUpload() {
+    const fileUpload = document.getElementById('fileUpload');
+    const fileInput = document.getElementById('csvFile');
+
+    fileUpload.addEventListener('click', () => fileInput.click());
+
+    fileUpload.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUpload.classList.add('drag-over');
+    });
+
+    fileUpload.addEventListener('dragleave', () => {
+        fileUpload.classList.remove('drag-over');
+    });
+
+    fileUpload.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUpload.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            fileInput.files = files;
+            handleFileSelect(fileInput);
+        }
+    });
+}
+
+function handleFileSelect(input) {
+    const file = input.files[0];
+    const fileNameEl = document.getElementById('selectedFileName');
+
+    if (file) {
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showToast('Please select a CSV file', 'error');
+            input.value = '';
+            fileNameEl.textContent = '';
+            return;
+        }
+
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File size must be less than 5MB', 'error');
+            input.value = '';
+            fileNameEl.textContent = '';
+            return;
+        }
+
+        const fileSize = (file.size / 1024).toFixed(1);
+        fileNameEl.innerHTML = `
+            <i class="fas fa-file-csv" style="color: var(--success);"></i>
+            <strong>${escapeHtml(file.name)}</strong> (${fileSize} KB)
+        `;
+    }
+}
+
+async function submitImport() {
+    const fileInput = document.getElementById('csvFile');
+    const importBtn = document.getElementById('importBtn');
+
+    if (!fileInput.files.length) {
+        showToast('Please select a CSV file', 'error');
+        return;
+    }
+
+    // Show loading state
+    const originalBtnText = importBtn.innerHTML;
+    importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+    importBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    const selectedTopics = Array.from(document.getElementById('importTopics').selectedOptions)
+        .map(o => o.value);
+    selectedTopics.forEach(id => formData.append('topic_ids', id));
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/vocabulary/import_csv/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${token}`
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeModal('importModal');
+            document.getElementById('importForm').reset();
+            document.getElementById('selectedFileName').textContent = '';
+
+            // Show result modal
+            showImportResults(data);
+            loadVocabulary();
+        } else {
+            showToast(data.error || 'Import failed', 'error');
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    } finally {
+        importBtn.innerHTML = originalBtnText;
+        importBtn.disabled = false;
+    }
+}
+
+function showImportResults(data) {
+    const titleEl = document.getElementById('importResultTitle');
+    const bodyEl = document.getElementById('importResultBody');
+
+    const hasErrors = data.errors && data.errors.length > 0;
+
+    if (data.created_count > 0 && !hasErrors) {
+        titleEl.innerHTML = '<i class="fas fa-check-circle" style="color: var(--success);"></i> Import Successful';
+    } else if (data.created_count > 0 && hasErrors) {
+        titleEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> Import Completed with Warnings';
+    } else {
+        titleEl.innerHTML = '<i class="fas fa-times-circle" style="color: var(--danger);"></i> Import Failed';
+    }
+
+    let html = `
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="font-size: 3rem; color: var(--${data.created_count > 0 ? 'success' : 'danger'}); margin-bottom: 0.5rem;">
+                <i class="fas fa-${data.created_count > 0 ? 'check-circle' : 'times-circle'}"></i>
+            </div>
+            <p style="font-size: 1.1rem; color: var(--gray-700);">${data.message}</p>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${data.created_count}</div>
+                <div style="font-size: 0.85rem; color: var(--gray-500);">Words Added</div>
+            </div>
+            ${hasErrors ? `
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">${data.errors.length}</div>
+                <div style="font-size: 0.85rem; color: var(--gray-500);">Errors</div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    if (hasErrors) {
+        html += `
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius); padding: 1rem; max-height: 150px; overflow-y: auto;">
+                <p style="font-size: 0.85rem; font-weight: 600; color: var(--danger); margin-bottom: 0.5rem;">
+                    <i class="fas fa-exclamation-circle"></i> Errors:
+                </p>
+                <ul style="font-size: 0.8rem; color: var(--gray-600); margin: 0; padding-left: 1.25rem;">
+                    ${data.errors.map(err => `<li>${escapeHtml(err)}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    bodyEl.innerHTML = html;
+    document.getElementById('importResultModal').classList.add('active');
+}
+
+function speakWord(word) {
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
+    });
+});
+</script>
+{% endblock %}

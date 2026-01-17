@@ -1,0 +1,282 @@
+SOFTWARE REQUIREMENTS SPECIFICATION (EXTENDED)
+Modules: Learning, Practice, Analytics
+English Vocabulary Learning Web Application (MVP+)
+1. Overview
+
+This document specifies requirements for:
+
+Learning Plan creation and flashcard-based learning
+
+Practice sessions based on learning plans
+
+Learning analytics, progress tracking, and risk assessment
+
+These modules apply only to learner role.
+Admin role is excluded unless explicitly stated.
+
+2. Learning Module
+2.1 Learning Plan Management
+2.1.1 Learning Plan Definition
+
+A Learning Plan represents a structured vocabulary learning schedule created by a learner.
+
+Functional Requirements – Learning Plan
+
+FR-LP-01
+The system shall allow learners to create a learning plan.
+
+FR-LP-02
+A learning plan shall include:
+
+plan_name
+
+start_date
+
+end_date
+
+daily_study_time (minutes)
+
+selected_topics (one or more)
+
+selected_levels (one or more)
+
+FR-LP-03
+A learner may have multiple active learning plans.
+
+FR-LP-04
+A learning plan shall be associated with a fixed vocabulary set at creation time.
+
+FR-LP-05
+The system shall calculate the total number of days in the plan.
+
+2.2 Flashcard-Based Learning
+2.2.1 Flashcard Structure
+
+Each flashcard shall consist of two sides.
+
+Front Side
+
+word
+
+part_of_speech
+
+english_definition
+
+vietnamese_meaning
+
+pronunciation (voice)
+
+Back Side
+
+vietnamese_meaning
+
+example_sentence
+
+note (user editable)
+
+pronunciation (voice)
+
+Functional Requirements – Flashcards
+
+FR-FC-01
+The system shall present vocabulary to learners in flashcard format.
+
+FR-FC-02
+The system shall allow learners to flip flashcards between front and back.
+
+FR-FC-03
+The system shall provide pronunciation playback on both sides of a flashcard.
+
+FR-FC-04
+For each flashcard, learners shall be able to mark one of the following statuses:
+
+learned
+
+mastered
+
+review_required
+
+FR-FC-05
+Flashcard status changes shall be persisted immediately.
+
+2.3 Daily Learning Progress Tracking
+
+FR-LP-06
+The system shall track daily learning activity per learning plan.
+
+FR-LP-07
+For each learning day, the system shall record:
+
+number_of_words_studied
+
+number_of_words_mastered
+
+number_of_words_marked_for_review
+
+FR-LP-08
+The system shall associate daily progress with both the learner and the learning plan.
+
+3. Practice Module
+3.1 Practice Session Definition
+
+A Practice Session is a learner-initiated activity using vocabulary from an existing learning plan.
+
+Functional Requirements – Practice Setup
+
+FR-PR-01
+The system shall allow learners to select a learning plan for practice.
+
+FR-PR-02
+The system shall allow learners to choose a practice mode.
+
+3.2 Practice Modes
+3.2.1 Flashcard Practice
+
+FR-PR-FC-01
+The system shall allow learners to practice vocabulary using flashcards.
+
+3.2.2 English Word Input Practice
+
+FR-PR-EN-01
+The system shall display Vietnamese meaning and require learners to input the English word.
+
+FR-PR-EN-02
+The system shall validate learner input against the correct word.
+
+3.2.3 Vietnamese Meaning Input Practice
+
+FR-PR-VI-01
+The system shall display the English word and require learners to input the Vietnamese meaning.
+
+3.3 Post-Practice Self-Evaluation
+
+FR-PR-POST-01
+After each practice session, the system shall allow learners to self-evaluate vocabulary mastery.
+
+FR-PR-POST-02
+Self-evaluation results shall update flashcard learning status.
+
+3.4 Practice Result Tracking
+
+FR-PR-RES-01
+The system shall record practice session results, including:
+
+total_questions
+
+correct_answers
+
+incorrect_answers
+
+vocabulary_status_updates
+
+4. Analytics Module
+4.1 Learning Analytics
+
+FR-AN-01
+The system shall analyze learner progress over time.
+
+FR-AN-02
+The system shall calculate:
+
+learning consistency (study streak)
+
+mastery rate
+
+review frequency
+
+4.2 Risk Detection
+
+FR-AN-03
+The system shall identify learning risk indicators, including:
+
+missed study days
+
+low mastery rate
+
+high review_required ratio
+
+FR-AN-04
+The system shall classify learning risk levels:
+
+low
+
+medium
+
+high
+
+4.3 Reminder and Notification Logic
+
+FR-AN-05
+The system shall notify learners when learning risk is medium or high.
+
+FR-AN-06
+Notifications may include:
+
+reminder to study
+
+suggestion to review specific vocabulary
+
+encouragement messages
+
+5. Data Model Extensions
+5.1 Learning Plan Entity
+LearningPlan
+- id
+- user_id
+- name
+- start_date
+- end_date
+- daily_study_time
+- selected_topics[]
+- selected_levels[]
+- created_at
+
+5.2 Learning Progress Entity
+LearningProgress
+- id
+- user_id
+- learning_plan_id
+- date
+- words_studied
+- words_mastered
+- words_review_required
+
+5.3 Practice Session Entity
+PracticeSession
+- id
+- user_id
+- learning_plan_id
+- practice_type
+- total_questions
+- correct_answers
+- created_at
+
+6. Non-Functional Requirements
+
+NFR-LRN-01
+Learning and practice sessions shall resume correctly after page reload.
+
+NFR-AN-01
+Analytics calculations shall not block learning or practice flows.
+
+7. Acceptance Criteria
+
+Learners can create and manage learning plans
+
+Flashcard learning records daily progress
+
+Practice supports multiple modes
+
+Learners can self-evaluate mastery
+
+Analytics detects learning risks and triggers reminders
+
+8. Explicitly Deferred (Phase 2+)
+
+Adaptive difficulty adjustment
+
+AI-generated practice questions
+
+Pronunciation scoring
+
+Coach/teacher dashboards

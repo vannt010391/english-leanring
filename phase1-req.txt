@@ -1,0 +1,241 @@
+SOFTWARE REQUIREMENTS SPECIFICATION (UPDATED)
+English Vocabulary Learning Web Application
+Modules: Vocabulary Management, Topic Management, Roles & Permissions (MVP)
+1. Purpose
+
+This document specifies the requirements for managing shared vocabulary, user-specific vocabulary, topic categorization, and role-based access control in the English Vocabulary Learning Web Application.
+
+2. Scope
+
+This SRS covers:
+
+System-wide shared vocabulary
+
+User-owned vocabulary
+
+Vocabulary topic categorization
+
+Role-based permissions (admin, learner)
+
+Vocabulary input methods (manual, context-based, CSV)
+
+Browser-based pronunciation (Text-to-Speech)
+
+Out of scope:
+
+Vocabulary approval workflow (future)
+
+Vocabulary marketplace or community voting
+
+Advanced permission hierarchies
+
+3. User Roles and Permissions
+3.1 Roles Definition
+Role	Description
+Admin	Manages system vocabulary and topics
+Learner	Learns vocabulary and manages personal vocabulary
+3.2 Role Permissions
+Admin Permissions
+
+Create, edit, delete system vocabulary
+
+Create, edit, delete topics
+
+Assign vocabulary to topics
+
+Import vocabulary via CSV as system vocabulary
+
+Learner Permissions
+
+View and learn system vocabulary
+
+Create, edit, delete personal vocabulary
+
+Import vocabulary via CSV as personal vocabulary
+
+Assign personal vocabulary to existing topics
+
+4. Vocabulary Types
+4.1 Vocabulary Classification
+Type	Ownership	Visibility
+System Vocabulary	Admin	All learners
+User Vocabulary	Learner	Owner only
+4.2 Vocabulary Source Attribute
+
+Each vocabulary item shall include a source attribute with one of the following values:
+
+system
+
+manual
+
+context
+
+csv
+
+5. Topic Management
+5.1 Topic Definition
+
+A Topic is a logical grouping used to categorize vocabulary for learning and browsing.
+
+Examples:
+
+Daily Life
+
+Business
+
+Academic English
+
+Technology
+
+5.2 Topic Ownership
+
+Topics are global entities
+
+Topics are created and managed only by admin
+
+Learners cannot create new topics in MVP
+
+5.3 Topic Assignment
+
+FR-TOP-01
+The system shall allow admin to assign system vocabulary to one or more topics.
+
+FR-TOP-02
+The system shall allow learners to assign their personal vocabulary to existing topics.
+
+FR-TOP-03
+A vocabulary item may belong to multiple topics.
+
+6. Functional Requirements – Vocabulary Management
+6.1 System Vocabulary (Admin)
+
+FR-SYS-01
+The system shall allow admin to create vocabulary items marked as system vocabulary.
+
+FR-SYS-02
+System vocabulary shall be visible and accessible to all learners.
+
+FR-SYS-03
+Only admin shall be permitted to modify or delete system vocabulary.
+
+6.2 User Vocabulary (Learner)
+
+FR-USER-01
+The system shall allow learners to create personal vocabulary items.
+
+FR-USER-02
+Personal vocabulary shall be visible only to its owner.
+
+FR-USER-03
+Learners shall not be able to modify system vocabulary.
+
+6.3 Vocabulary Input Methods
+
+FR-IN-01
+The system shall support manual vocabulary entry for both admin and learners.
+
+FR-IN-02
+The system shall support context-based vocabulary entry for learners.
+
+FR-IN-03
+The system shall support CSV import for vocabulary input.
+
+FR-IN-04
+Vocabulary imported by admin shall be classified as system vocabulary.
+
+FR-IN-05
+Vocabulary imported by learners shall be classified as personal vocabulary.
+
+7. CSV Import Requirements (Updated)
+
+FR-CSV-01
+The system shall allow both admin and learners to import vocabulary via CSV files.
+
+FR-CSV-02
+The system shall assign imported vocabulary ownership based on the importer’s role.
+
+FR-CSV-03
+The system shall support optional topic assignment during CSV import.
+
+FR-CSV-04
+If topic values in CSV do not exist, they shall be ignored in MVP.
+
+8. Pronunciation Requirements (Browser TTS – MVP)
+
+FR-TTS-01
+The system shall generate pronunciation using browser-based Text-to-Speech.
+
+FR-TTS-02
+Pronunciation shall be available for both system and user vocabulary.
+
+FR-TTS-03
+Pronunciation functionality shall not depend on user role.
+
+9. Data Model Requirements (Updated)
+9.1 Vocabulary Entity
+Vocabulary
+- id
+- word
+- meaning
+- example_sentence
+- source
+- is_system (boolean)
+- owner_id (nullable for system vocab)
+- created_by_role (admin | learner)
+- learning_status
+- created_at
+
+9.2 Topic Entity
+Topic
+- id
+- name
+- description
+- created_at
+
+9.3 Vocabulary–Topic Relationship
+VocabularyTopic
+- vocabulary_id
+- topic_id
+
+10. Access Control Rules
+
+AC-01
+Only admin users shall be allowed to manage system vocabulary.
+
+AC-02
+Learners shall only be allowed to manage their own vocabulary.
+
+AC-03
+All users shall be allowed to view system vocabulary.
+
+11. Non-Functional Requirements (Additions)
+
+NFR-SEC-01
+The system shall enforce role-based access control at both API and UI levels.
+
+NFR-DATA-01
+System vocabulary data shall not be modified by learner actions.
+
+12. Acceptance Criteria (Updated MVP)
+
+Admin can create topics and system vocabulary
+
+Learners can view and learn system vocabulary
+
+Learners can add and manage personal vocabulary
+
+Vocabulary can be categorized by topics
+
+CSV import works for both roles with correct ownership
+
+Pronunciation works for all vocabulary using browser TTS
+
+13. Future Enhancements (Explicitly Deferred)
+
+Learner-created topics
+
+Community-shared vocabulary
+
+Vocabulary approval workflow
+
+Role expansion (teacher, editor)

@@ -1,0 +1,905 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Learning Plans - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item" data-page="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" data-page="vocabulary">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" data-page="topics">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+            </div>
+            <a href="{% url 'learning_plans' %}" class="nav-item active" data-page="learning">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plans</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item" data-page="practice">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice</span>
+            </a>
+            <a href="{% url 'analytics' %}" class="nav-item" data-page="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">Learning Plans</h2>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="openCreatePlanModal()">
+                    <i class="fas fa-plus"></i> New Plan
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <select class="form-control" id="filterStatus" onchange="loadPlans()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Plans Grid -->
+            <div class="plans-grid" id="plansGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Create Plan Modal -->
+<div class="modal-overlay" id="createPlanModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title">Create Learning Plan</h3>
+            <button class="modal-close" onclick="closeModal('createPlanModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="createPlanForm">
+                <div class="form-group">
+                    <label class="form-label" for="planName">Plan Name *</label>
+                    <input type="text" class="form-control" id="planName" name="name" placeholder="e.g., IELTS Vocabulary" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="startDate">Start Date *</label>
+                        <input type="date" class="form-control" id="startDate" name="start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="endDate">End Date *</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="dailyStudyTime">Daily Study Time (minutes) *</label>
+                    <input type="number" class="form-control" id="dailyStudyTime" name="daily_study_time" min="5" max="480" value="30" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Topics *</label>
+                    <div class="checkbox-group" id="topicCheckboxes">
+                        <!-- Topics will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Levels *</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="A1"> A1 (Beginner)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="A2"> A2 (Elementary)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="B1"> B1 (Intermediate)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="B2"> B2 (Upper Intermediate)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="C1"> C1 (Advanced)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="levels" value="C2"> C2 (Proficient)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preview-box" id="planPreview" style="display: none;">
+                    <div class="preview-title">Plan Preview</div>
+                    <div class="preview-content">
+                        <span id="previewWords">0</span> vocabulary words will be included
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('createPlanModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createPlan()">
+                <i class="fas fa-plus"></i> Create Plan
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Plan Details Modal -->
+<div class="modal-overlay" id="planDetailsModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title" id="detailPlanName">Plan Details</h3>
+            <button class="modal-close" onclick="closeModal('planDetailsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="planDetailsContent">
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('planDetailsModal')">Close</button>
+            <button class="btn btn-danger" id="deletePlanBtn" onclick="deletePlan()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let allPlans = [];
+let allTopics = [];
+let currentPlanId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadUserInfo();
+    loadTopics();
+    loadPlans();
+
+    // Set default dates
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = nextMonth.toISOString().split('T')[0];
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userName').textContent = user.username || 'User';
+    document.getElementById('userRole').textContent = user.role || 'learner';
+    document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+}
+
+async function loadTopics() {
+    try {
+        const response = await apiRequest('/api/topics/');
+        allTopics = await response.json();
+
+        const container = document.getElementById('topicCheckboxes');
+        container.innerHTML = allTopics.map(t => `
+            <label class="checkbox-label">
+                <input type="checkbox" name="topics" value="${t.id}"> ${escapeHtml(t.name)}
+                <span class="topic-count">(${t.vocabulary_count} words)</span>
+            </label>
+        `).join('');
+    } catch (error) {
+        console.error('Failed to load topics:', error);
+    }
+}
+
+async function loadPlans() {
+    try {
+        const statusFilter = document.getElementById('filterStatus').value;
+        let url = '/api/learning/plans/';
+        if (statusFilter) {
+            url += `?status=${statusFilter}`;
+        }
+
+        const response = await apiRequest(url);
+        const data = await response.json();
+        allPlans = data.results || data;
+
+        renderPlans(allPlans);
+    } catch (error) {
+        console.error('Failed to load plans:', error);
+        document.getElementById('plansGrid').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <h3>Failed to load plans</h3>
+                <p>Please try again later.</p>
+            </div>
+        `;
+    }
+}
+
+function renderPlans(plans) {
+    const container = document.getElementById('plansGrid');
+
+    if (plans.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-calendar-plus"></i></div>
+                <h3>No learning plans yet</h3>
+                <p>Create a learning plan to start your vocabulary journey!</p>
+                <button class="btn btn-primary" onclick="openCreatePlanModal()">
+                    <i class="fas fa-plus"></i> Create Your First Plan
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = plans.map(plan => createPlanCard(plan)).join('');
+}
+
+function createPlanCard(plan) {
+    const progress = plan.progress_summary || {};
+    const total = plan.vocabulary_count || 0;
+    const mastered = progress.mastered || 0;
+    const learned = progress.learned || 0;
+    const progressPercent = total > 0 ? Math.round(((mastered + learned) / total) * 100) : 0;
+
+    const statusColors = {
+        'active': 'success',
+        'paused': 'warning',
+        'completed': 'info'
+    };
+
+    const topicNames = (plan.selected_topics || []).map(t => t.name).join(', ') || 'No topics';
+
+    return `
+        <div class="plan-card" onclick="showPlanDetails(${plan.id})">
+            <div class="plan-card-header">
+                <h3 class="plan-name">${escapeHtml(plan.name)}</h3>
+                <span class="badge badge-${statusColors[plan.status] || 'info'}">${plan.status}</span>
+            </div>
+            <div class="plan-card-body">
+                <div class="plan-info">
+                    <div class="plan-info-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>${formatDate(plan.start_date)} - ${formatDate(plan.end_date)}</span>
+                    </div>
+                    <div class="plan-info-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${plan.daily_study_time} min/day</span>
+                    </div>
+                    <div class="plan-info-item">
+                        <i class="fas fa-book"></i>
+                        <span>${total} words</span>
+                    </div>
+                    <div class="plan-info-item">
+                        <i class="fas fa-tags"></i>
+                        <span>${escapeHtml(topicNames)}</span>
+                    </div>
+                </div>
+                <div class="plan-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <div class="progress-text">${progressPercent}% complete (${mastered + learned}/${total})</div>
+                </div>
+            </div>
+            <div class="plan-card-footer">
+                <a href="/learning/${plan.id}/study/" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">
+                    <i class="fas fa-play"></i> Study
+                </a>
+                <a href="/practice/?plan=${plan.id}" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">
+                    <i class="fas fa-graduation-cap"></i> Practice
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function openCreatePlanModal() {
+    document.getElementById('createPlanForm').reset();
+
+    // Reset dates
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+    document.getElementById('endDate').value = nextMonth.toISOString().split('T')[0];
+
+    document.getElementById('planPreview').style.display = 'none';
+    document.getElementById('createPlanModal').classList.add('active');
+}
+
+async function createPlan() {
+    const form = document.getElementById('createPlanForm');
+
+    const selectedTopics = Array.from(document.querySelectorAll('input[name="topics"]:checked'))
+        .map(cb => parseInt(cb.value));
+    const selectedLevels = Array.from(document.querySelectorAll('input[name="levels"]:checked'))
+        .map(cb => cb.value);
+
+    if (selectedTopics.length === 0) {
+        showToast('Please select at least one topic.', 'error');
+        return;
+    }
+
+    if (selectedLevels.length === 0) {
+        showToast('Please select at least one level.', 'error');
+        return;
+    }
+
+    const data = {
+        name: document.getElementById('planName').value,
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        daily_study_time: parseInt(document.getElementById('dailyStudyTime').value),
+        topic_ids: selectedTopics,
+        selected_levels: selectedLevels
+    };
+
+    try {
+        const response = await apiRequest('/api/learning/plans/', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showToast('Learning plan created successfully!', 'success');
+            closeModal('createPlanModal');
+            loadPlans();
+        } else {
+            const error = await response.json();
+            const errorMsg = Object.values(error).flat()[0] || 'Failed to create plan';
+            showToast(errorMsg, 'error');
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+async function showPlanDetails(planId) {
+    currentPlanId = planId;
+    document.getElementById('planDetailsModal').classList.add('active');
+    document.getElementById('planDetailsContent').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+    try {
+        const response = await apiRequest(`/api/learning/plans/${planId}/`);
+        const plan = await response.json();
+
+        document.getElementById('detailPlanName').textContent = plan.name;
+
+        const progress = plan.progress_summary || {};
+        const statusColors = {
+            'active': 'success',
+            'paused': 'warning',
+            'completed': 'info'
+        };
+
+        document.getElementById('planDetailsContent').innerHTML = `
+            <div class="plan-details">
+                <div class="detail-section">
+                    <h4>Plan Information</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Status</span>
+                            <span class="badge badge-${statusColors[plan.status]}">${plan.status}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span>${formatDate(plan.start_date)} - ${formatDate(plan.end_date)} (${plan.total_days} days)</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Daily Study Time</span>
+                            <span>${plan.daily_study_time} minutes</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Words per Day</span>
+                            <span>~${plan.words_per_day} words</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Topics</h4>
+                    <div class="topic-badges">
+                        ${plan.selected_topics.map(t => `<span class="badge badge-primary">${escapeHtml(t.name)}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Levels</h4>
+                    <div class="level-badges">
+                        ${plan.selected_levels.map(l => `<span class="badge badge-info">${l}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Progress</h4>
+                    <div class="progress-stats">
+                        <div class="progress-stat">
+                            <span class="stat-number">${plan.vocabulary_count}</span>
+                            <span class="stat-label">Total Words</span>
+                        </div>
+                        <div class="progress-stat">
+                            <span class="stat-number text-success">${progress.mastered || 0}</span>
+                            <span class="stat-label">Mastered</span>
+                        </div>
+                        <div class="progress-stat">
+                            <span class="stat-number text-warning">${progress.learned || 0}</span>
+                            <span class="stat-label">Learned</span>
+                        </div>
+                        <div class="progress-stat">
+                            <span class="stat-number text-danger">${progress.review_required || 0}</span>
+                            <span class="stat-label">Need Review</span>
+                        </div>
+                        <div class="progress-stat">
+                            <span class="stat-number text-muted">${progress.new || 0}</span>
+                            <span class="stat-label">New</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-actions">
+                    <a href="/learning/${plan.id}/study/" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Start Studying
+                    </a>
+                    <a href="/practice/?plan=${plan.id}" class="btn btn-secondary">
+                        <i class="fas fa-graduation-cap"></i> Practice
+                    </a>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('planDetailsContent').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <h3>Failed to load plan details</h3>
+            </div>
+        `;
+    }
+}
+
+async function deletePlan() {
+    if (!currentPlanId) return;
+
+    if (!confirm('Are you sure you want to delete this learning plan? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/api/learning/plans/${currentPlanId}/`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showToast('Learning plan deleted.', 'success');
+            closeModal('planDetailsModal');
+            loadPlans();
+        } else {
+            showToast('Failed to delete plan.', 'error');
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
+    });
+});
+</script>
+
+<style>
+/* Plans Page Specific Styles */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.plan-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.plan-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.plan-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.plan-name {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.plan-card-body {
+    padding: 1.25rem;
+}
+
+.plan-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.plan-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.plan-info-item i {
+    color: var(--gray-400);
+    width: 16px;
+}
+
+.plan-progress {
+    margin-top: 1rem;
+}
+
+.plan-card-footer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-100);
+}
+
+.plan-card-footer .btn {
+    flex: 1;
+}
+
+/* Plan Details Modal */
+.detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.detail-section h4 {
+    margin: 0 0 0.75rem;
+    color: var(--gray-900);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+}
+
+.topic-badges,
+.level-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.progress-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.progress-stat {
+    padding: 0.75rem;
+    background: var(--gray-50);
+    border-radius: var(--radius);
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    color: var(--gray-500);
+}
+
+.detail-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+/* Create Plan Modal */
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.topic-count {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+}
+
+.preview-box {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.preview-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-right .btn span {
+        display: none;
+    }
+
+    .header-right .btn {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .plan-info {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-card-footer {
+        flex-direction: column;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .progress-stats .progress-stat:nth-child(4),
+    .progress-stats .progress-stat:nth-child(5) {
+        grid-column: span 1;
+    }
+
+    .detail-actions {
+        flex-direction: column;
+    }
+
+    .checkbox-group {
+        grid-template-columns: 1fr;
+        max-height: 150px;
+    }
+
+    .modal.modal-lg {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+        max-height: calc(100vh - 1rem);
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-row .form-group {
+        width: 100%;
+    }
+}
+
+/* Responsive - Mobile Small */
+@media (max-width: 480px) {
+    .plan-card-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .plan-name {
+        font-size: 1rem;
+    }
+
+    .plan-card-body {
+        padding: 1rem;
+    }
+
+    .plan-info-item {
+        font-size: 0.75rem;
+    }
+
+    .plan-card-footer {
+        padding: 0.75rem 1rem;
+    }
+
+    .plan-card-footer .btn {
+        font-size: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    .progress-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-number {
+        font-size: 1rem;
+    }
+
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .modal-title {
+        font-size: 1rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* Touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+    .plan-card {
+        cursor: default;
+    }
+
+    .plan-card:active {
+        transform: scale(0.98);
+    }
+
+    .checkbox-label {
+        padding: 0.5rem;
+        min-height: 44px;
+    }
+
+    .plan-card-footer .btn {
+        min-height: 44px;
+    }
+}
+</style>
+{% endblock %}

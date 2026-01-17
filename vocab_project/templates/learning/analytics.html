@@ -1,0 +1,1110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+            </div>
+            <a href="{% url 'learning_plans' %}" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plans</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice</span>
+            </a>
+            <a href="{% url 'analytics' %}" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">Learning Analytics</h2>
+            </div>
+            <div class="header-right">
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Your Learning Progress</h1>
+                <p class="page-subtitle">Track your vocabulary learning journey</p>
+            </div>
+
+            <!-- Overview Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon fire">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="studyStreak">0</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalWords">0</div>
+                        <div class="stat-label">Total Words</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="masteredWords">0</div>
+                        <div class="stat-label">Mastered</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="masteryRate">0%</div>
+                        <div class="stat-label">Mastery Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="card risk-card" id="riskCard">
+                <div class="card-body">
+                    <div class="risk-content">
+                        <div class="risk-indicator" id="riskIndicator">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="risk-details">
+                            <h3 id="riskTitle">Loading...</h3>
+                            <p id="riskMessage">Analyzing your learning patterns...</p>
+                        </div>
+                    </div>
+                    <div class="risk-recommendations" id="riskRecommendations"></div>
+                </div>
+            </div>
+
+            <div class="analytics-grid">
+                <!-- Weekly Progress -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Weekly Progress</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="weekly-chart" id="weeklyChart">
+                            <div class="loading"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning Plans Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Learning Plans</h3>
+                        <a href="{% url 'learning_plans' %}" class="btn btn-secondary btn-sm">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="plansSummary">
+                            <div class="loading"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Notifications</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark All Read</button>
+                </div>
+                <div class="card-body">
+                    <div id="notificationsList">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Notifications Dropdown -->
+<div class="notifications-dropdown" id="notificationsDropdown" style="display: none;">
+    <div class="dropdown-header">
+        <span>Notifications</span>
+        <button onclick="markAllRead()" class="btn-link">Mark all read</button>
+    </div>
+    <div class="dropdown-content" id="dropdownNotifications"></div>
+</div>
+
+<script>
+let analyticsData = null;
+let notifications = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadUserInfo();
+    loadAnalytics();
+    loadNotifications();
+    loadWeeklyProgress();
+    loadPlansSummary();
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userName').textContent = user.username || 'User';
+    document.getElementById('userRole').textContent = user.role || 'learner';
+    document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+}
+
+async function loadAnalytics() {
+    try {
+        const response = await apiRequest('/api/learning/analytics/');
+        const data = await response.json();
+        analyticsData = data;
+
+        // Update stats
+        document.getElementById('studyStreak').textContent = data.analytics.study_streak || 0;
+        document.getElementById('totalWords').textContent = data.summary.total_words || 0;
+        document.getElementById('masteredWords').textContent = data.summary.mastered_words || 0;
+        document.getElementById('masteryRate').textContent = `${Math.round(data.analytics.mastery_rate || 0)}%`;
+
+        // Update risk card
+        updateRiskCard(data.analytics);
+    } catch (error) {
+        console.error('Failed to load analytics:', error);
+    }
+}
+
+function updateRiskCard(analytics) {
+    const riskCard = document.getElementById('riskCard');
+    const indicator = document.getElementById('riskIndicator');
+    const title = document.getElementById('riskTitle');
+    const message = document.getElementById('riskMessage');
+    const recommendations = document.getElementById('riskRecommendations');
+
+    const riskConfig = {
+        'low': {
+            class: 'risk-low',
+            icon: 'fa-check-circle',
+            title: 'Great Progress!',
+            message: 'You\'re doing well! Keep up the consistent practice.'
+        },
+        'medium': {
+            class: 'risk-medium',
+            icon: 'fa-exclamation-circle',
+            title: 'Room for Improvement',
+            message: 'Your learning pace has slowed. Consider dedicating more time to study.'
+        },
+        'high': {
+            class: 'risk-high',
+            icon: 'fa-exclamation-triangle',
+            title: 'Attention Needed',
+            message: 'You\'ve been away for a while. Let\'s get back on track!'
+        }
+    };
+
+    const config = riskConfig[analytics.risk_level] || riskConfig['low'];
+
+    riskCard.className = `card risk-card ${config.class}`;
+    indicator.innerHTML = `<i class="fas ${config.icon}"></i>`;
+    title.textContent = config.title;
+    message.textContent = config.message;
+
+    // Add recommendations
+    if (analytics.risk_factors && analytics.risk_factors.length > 0) {
+        const factorMessages = analytics.risk_factors_display || [];
+        recommendations.innerHTML = `
+            <div class="recommendations-list">
+                ${factorMessages.map(f => `<div class="recommendation-item"><i class="fas fa-lightbulb"></i> ${escapeHtml(f)}</div>`).join('')}
+            </div>
+            <div class="recommendation-actions">
+                <a href="{% url 'learning_plans' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-play"></i> Start Studying
+                </a>
+                <a href="{% url 'practice' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-graduation-cap"></i> Practice Now
+                </a>
+            </div>
+        `;
+    } else {
+        recommendations.innerHTML = '';
+    }
+}
+
+async function loadNotifications() {
+    try {
+        const response = await apiRequest('/api/learning/notifications/');
+        const data = await response.json();
+        notifications = data.results || data;
+
+        // Update badge
+        const unread = notifications.filter(n => !n.is_read).length;
+        const badge = document.getElementById('notificationBadge');
+        if (unread > 0) {
+            badge.textContent = unread > 9 ? '9+' : unread;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        // Render list
+        renderNotifications();
+    } catch (error) {
+        console.error('Failed to load notifications:', error);
+    }
+}
+
+function renderNotifications() {
+    const container = document.getElementById('notificationsList');
+
+    if (notifications.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No notifications yet.</p>';
+        return;
+    }
+
+    container.innerHTML = notifications.slice(0, 10).map(n => `
+        <div class="notification-item ${n.is_read ? 'read' : 'unread'}" onclick="markAsRead(${n.id})">
+            <div class="notification-icon ${getNotificationIconClass(n.notification_type)}">
+                <i class="fas ${getNotificationIcon(n.notification_type)}"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">${escapeHtml(n.title)}</div>
+                <div class="notification-message">${escapeHtml(n.message)}</div>
+                <div class="notification-time">${formatTimeAgo(n.created_at)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getNotificationIcon(type) {
+    const icons = {
+        'study_reminder': 'fa-bell',
+        'risk_alert': 'fa-exclamation-triangle',
+        'encouragement': 'fa-heart',
+        'streak_achievement': 'fa-fire',
+        'review_suggestion': 'fa-redo'
+    };
+    return icons[type] || 'fa-bell';
+}
+
+function getNotificationIconClass(type) {
+    const classes = {
+        'study_reminder': 'reminder',
+        'risk_alert': 'alert',
+        'encouragement': 'encouragement',
+        'streak_achievement': 'achievement',
+        'review_suggestion': 'suggestion'
+    };
+    return classes[type] || 'reminder';
+}
+
+function formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    return date.toLocaleDateString();
+}
+
+async function markAsRead(id) {
+    try {
+        await apiRequest(`/api/learning/notifications/${id}/read/`, {
+            method: 'PATCH'
+        });
+        loadNotifications();
+    } catch (error) {
+        console.error('Failed to mark as read:', error);
+    }
+}
+
+async function markAllRead() {
+    try {
+        await apiRequest('/api/learning/notifications/mark_all_read/', {
+            method: 'POST'
+        });
+        loadNotifications();
+        showToast('All notifications marked as read.', 'success');
+    } catch (error) {
+        console.error('Failed to mark all as read:', error);
+    }
+}
+
+async function loadWeeklyProgress() {
+    try {
+        const response = await apiRequest('/api/learning/plans/');
+        const plansData = await response.json();
+        const plans = plansData.results || plansData;
+
+        if (plans.length === 0) {
+            document.getElementById('weeklyChart').innerHTML = `
+                <div class="empty-state-sm">
+                    <p>No learning plans yet. Create one to see your progress!</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Get progress for the first active plan
+        const activePlan = plans.find(p => p.status === 'active') || plans[0];
+        const progressRes = await apiRequest(`/api/learning/plans/${activePlan.id}/progress/?days=7`);
+        const progress = await progressRes.json();
+
+        renderWeeklyChart(progress);
+    } catch (error) {
+        console.error('Failed to load weekly progress:', error);
+        document.getElementById('weeklyChart').innerHTML = '<p class="text-muted">Failed to load data.</p>';
+    }
+}
+
+function renderWeeklyChart(progress) {
+    const container = document.getElementById('weeklyChart');
+
+    // Create last 7 days
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push({
+            date: date.toISOString().split('T')[0],
+            label: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            words: 0
+        });
+    }
+
+    // Fill in progress data
+    progress.forEach(p => {
+        const day = days.find(d => d.date === p.date);
+        if (day) {
+            day.words = p.words_studied;
+        }
+    });
+
+    const maxWords = Math.max(...days.map(d => d.words), 1);
+
+    container.innerHTML = `
+        <div class="chart-bars">
+            ${days.map(d => `
+                <div class="chart-bar-wrapper">
+                    <div class="chart-bar" style="height: ${(d.words / maxWords) * 100}%">
+                        <span class="chart-value">${d.words}</span>
+                    </div>
+                    <span class="chart-label">${d.label}</span>
+                </div>
+            `).join('')}
+        </div>
+        <div class="chart-legend">Words studied per day</div>
+    `;
+}
+
+async function loadPlansSummary() {
+    try {
+        const response = await apiRequest('/api/learning/plans/');
+        const data = await response.json();
+        const plans = data.results || data;
+
+        const container = document.getElementById('plansSummary');
+
+        if (plans.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state-sm">
+                    <p>No learning plans yet.</p>
+                    <a href="{% url 'learning_plans' %}" class="btn btn-primary btn-sm">Create Plan</a>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = plans.slice(0, 5).map(plan => {
+            const progress = plan.progress_summary || {};
+            const total = plan.vocabulary_count || 1;
+            const mastered = progress.mastered || 0;
+            const learned = progress.learned || 0;
+            const progressPercent = Math.round(((mastered + learned) / total) * 100);
+
+            return `
+                <div class="plan-summary-item">
+                    <div class="plan-summary-header">
+                        <span class="plan-summary-name">${escapeHtml(plan.name)}</span>
+                        <span class="plan-summary-status badge badge-${plan.status === 'active' ? 'success' : 'info'}">${plan.status}</span>
+                    </div>
+                    <div class="plan-summary-progress">
+                        <div class="progress-bar-sm">
+                            <div class="progress-fill-sm" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <span class="progress-text-sm">${progressPercent}%</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Failed to load plans:', error);
+    }
+}
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationsDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.notification-bell') && !e.target.closest('.notifications-dropdown')) {
+        document.getElementById('notificationsDropdown').style.display = 'none';
+    }
+});
+</script>
+
+<style>
+/* Analytics Specific Styles */
+.stat-icon.fire {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Risk Card */
+.risk-card {
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--success);
+}
+
+.risk-card.risk-low {
+    border-left-color: var(--success);
+}
+
+.risk-card.risk-medium {
+    border-left-color: var(--warning);
+}
+
+.risk-card.risk-high {
+    border-left-color: var(--danger);
+}
+
+.risk-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.risk-indicator {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.risk-low .risk-indicator {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.risk-medium .risk-indicator {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.risk-high .risk-indicator {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.risk-details h3 {
+    margin: 0 0 0.25rem;
+}
+
+.risk-details p {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+.risk-recommendations {
+    margin-top: 1rem;
+}
+
+.recommendations-list {
+    margin-bottom: 1rem;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    color: var(--gray-600);
+}
+
+.recommendation-item i {
+    color: var(--warning);
+}
+
+.recommendation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Weekly Chart */
+.chart-bars {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 150px;
+    padding: 1rem 0;
+}
+
+.chart-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.chart-bar {
+    width: 30px;
+    background: var(--gradient-primary);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    position: relative;
+    transition: height 0.3s;
+}
+
+.chart-value {
+    position: absolute;
+    top: -20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.chart-label {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.chart-legend {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    margin-top: 0.5rem;
+}
+
+/* Plan Summary */
+.plan-summary-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.plan-summary-item:last-child {
+    border-bottom: none;
+}
+
+.plan-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.plan-summary-name {
+    font-weight: 500;
+}
+
+.plan-summary-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar-sm {
+    flex: 1;
+    height: 6px;
+    background: var(--gray-100);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill-sm {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.progress-text-sm {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Notifications */
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--danger);
+    color: white;
+    font-size: 0.625rem;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-100);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: var(--gray-50);
+}
+
+.notification-item.unread {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-icon.reminder {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+}
+
+.notification-icon.alert {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.notification-icon.encouragement {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+}
+
+.notification-icon.achievement {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.notification-icon.suggestion {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.notification-message {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.25rem;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+}
+
+.empty-state-sm {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.notifications-dropdown {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 350px;
+    max-height: 400px;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-100);
+    font-weight: 600;
+}
+
+.dropdown-content {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .risk-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .risk-details {
+        text-align: center;
+    }
+
+    .recommendation-actions {
+        flex-direction: column;
+    }
+
+    .recommendation-actions .btn {
+        width: 100%;
+    }
+
+    .chart-bar {
+        width: 24px;
+    }
+
+    .notifications-dropdown {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+    }
+
+    .notification-item {
+        padding: 0.75rem;
+    }
+
+    .notification-icon {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Responsive - Mobile Small */
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .page-header .page-subtitle {
+        font-size: 0.875rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.625rem;
+    }
+
+    .risk-card .card-body {
+        padding: 1rem;
+    }
+
+    .risk-indicator {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .risk-details h3 {
+        font-size: 1rem;
+    }
+
+    .risk-details p {
+        font-size: 0.875rem;
+    }
+
+    .recommendation-item {
+        font-size: 0.75rem;
+    }
+
+    .card-header {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .card-header .btn {
+        width: 100%;
+    }
+
+    .card-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .chart-bars {
+        height: 120px;
+        padding: 0.5rem 0;
+    }
+
+    .chart-bar {
+        width: 20px;
+    }
+
+    .chart-value {
+        font-size: 0.625rem;
+        top: -16px;
+    }
+
+    .chart-label {
+        font-size: 0.625rem;
+    }
+
+    .chart-legend {
+        font-size: 0.75rem;
+    }
+
+    .plan-summary-item {
+        padding: 0.5rem 0;
+    }
+
+    .plan-summary-name {
+        font-size: 0.875rem;
+    }
+
+    .notification-item {
+        gap: 0.75rem;
+        padding: 0.625rem;
+    }
+
+    .notification-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .notification-title {
+        font-size: 0.875rem;
+    }
+
+    .notification-message {
+        font-size: 0.75rem;
+    }
+
+    .notification-time {
+        font-size: 0.625rem;
+    }
+
+    .empty-state-sm {
+        padding: 1rem;
+    }
+
+    .notifications-dropdown {
+        top: 50px;
+        max-height: 350px;
+    }
+
+    .dropdown-header {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .dropdown-content {
+        max-height: 300px;
+    }
+}
+
+/* Touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+    .notification-item {
+        min-height: 60px;
+    }
+
+    .notification-item:active {
+        background: var(--gray-100);
+    }
+
+    .notification-bell {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .recommendation-actions .btn {
+        min-height: 44px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .risk-content {
+        flex-direction: row;
+        text-align: left;
+    }
+
+    .risk-details {
+        text-align: left;
+    }
+
+    .recommendation-actions {
+        flex-direction: row;
+    }
+
+    .analytics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .chart-bars {
+        height: 100px;
+    }
+}
+</style>
+{% endblock %}

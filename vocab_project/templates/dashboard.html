@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" data-page="vocabulary">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" data-page="topics">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+            </div>
+            <a href="{% url 'learning_plans' %}" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plans</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice</span>
+            </a>
+            <a href="{% url 'analytics' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search vocabulary..." id="globalSearch">
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+                <button class="header-btn" onclick="openAddVocabModal()" title="Add Vocabulary">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Welcome back! Here's your learning progress</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalVocab">0</div>
+                        <div class="stat-label">Total Vocabulary</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 12% this week
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="masteredVocab">0</div>
+                        <div class="stat-label">Mastered</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 8% this week
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="learningVocab">0</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalTopics">0</div>
+                        <div class="stat-label">Topics</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Vocabulary -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Vocabulary</h3>
+                    <a href="{% url 'vocabulary_list' %}" class="btn btn-secondary btn-sm">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="vocab-grid" id="recentVocab">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Vocabulary Modal -->
+<div class="modal-overlay" id="addVocabModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Add New Vocabulary</h3>
+            <button class="modal-close" onclick="closeModal('addVocabModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addVocabForm">
+                <div class="form-group">
+                    <label class="form-label" for="word">Word *</label>
+                    <input type="text" class="form-control" id="word" name="word" placeholder="Enter the word" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="meaning">Meaning *</label>
+                    <textarea class="form-control" id="meaning" name="meaning" placeholder="Enter the meaning" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="example_sentence">Example Sentence</label>
+                    <textarea class="form-control" id="example_sentence" name="example_sentence" placeholder="Use the word in a sentence"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="topic_ids">Topics</label>
+                    <select class="form-control" id="topic_ids" name="topic_ids" multiple>
+                        <!-- Topics will be loaded dynamically -->
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addVocabModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitVocab()">
+                <i class="fas fa-plus"></i> Add Vocabulary
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadUserInfo();
+    loadDashboardStats();
+    loadRecentVocabulary();
+    loadTopicsForSelect();
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userName').textContent = user.username || 'User';
+    document.getElementById('userRole').textContent = user.role || 'learner';
+    document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+}
+
+async function loadDashboardStats() {
+    try {
+        const [vocabRes, topicsRes] = await Promise.all([
+            apiRequest('/api/vocabulary/'),
+            apiRequest('/api/topics/')
+        ]);
+
+        const vocab = await vocabRes.json();
+        const topics = await topicsRes.json();
+
+        document.getElementById('totalVocab').textContent = vocab.length;
+        document.getElementById('masteredVocab').textContent = vocab.filter(v => v.learning_status === 'mastered').length;
+        document.getElementById('learningVocab').textContent = vocab.filter(v => v.learning_status === 'learning').length;
+        document.getElementById('totalTopics').textContent = topics.length;
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+    }
+}
+
+async function loadRecentVocabulary() {
+    try {
+        const response = await apiRequest('/api/vocabulary/');
+        const vocab = await response.json();
+
+        const container = document.getElementById('recentVocab');
+
+        if (vocab.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-state-icon"><i class="fas fa-book-open"></i></div>
+                    <h3>No vocabulary yet</h3>
+                    <p>Start adding words to build your vocabulary!</p>
+                    <button class="btn btn-primary" onclick="openAddVocabModal()">
+                        <i class="fas fa-plus"></i> Add Your First Word
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = vocab.slice(0, 6).map(v => createVocabCard(v)).join('');
+    } catch (error) {
+        console.error('Failed to load vocabulary:', error);
+    }
+}
+
+function createVocabCard(vocab) {
+    const statusClass = vocab.learning_status;
+    const topics = vocab.topics.map(t => `<span class="badge badge-primary">${t.name}</span>`).join('');
+
+    return `
+        <div class="vocab-card">
+            <div class="vocab-card-header">
+                <span class="vocab-word">${escapeHtml(vocab.word)}</span>
+                <button class="vocab-speak-btn" onclick="speakWord('${escapeHtml(vocab.word)}')">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+            <div class="vocab-card-body">
+                <p class="vocab-meaning">${escapeHtml(vocab.meaning)}</p>
+                ${vocab.example_sentence ? `<p class="vocab-example">"${escapeHtml(vocab.example_sentence)}"</p>` : ''}
+            </div>
+            <div class="vocab-card-footer">
+                <div class="vocab-meta">
+                    <span class="badge badge-${statusClass === 'mastered' ? 'success' : statusClass === 'learning' ? 'warning' : 'info'}">${statusClass}</span>
+                    ${vocab.is_system ? '<span class="badge badge-primary">System</span>' : ''}
+                </div>
+                <div class="vocab-topics">${topics}</div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadTopicsForSelect() {
+    try {
+        const response = await apiRequest('/api/topics/');
+        const topics = await response.json();
+        const select = document.getElementById('topic_ids');
+
+        select.innerHTML = topics.map(t =>
+            `<option value="${t.id}">${escapeHtml(t.name)}</option>`
+        ).join('');
+    } catch (error) {
+        console.error('Failed to load topics:', error);
+    }
+}
+
+function openAddVocabModal() {
+    document.getElementById('addVocabModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+async function submitVocab() {
+    const form = document.getElementById('addVocabForm');
+    const formData = new FormData(form);
+
+    const data = {
+        word: formData.get('word'),
+        meaning: formData.get('meaning'),
+        example_sentence: formData.get('example_sentence') || null,
+        topic_ids: Array.from(document.getElementById('topic_ids').selectedOptions).map(o => parseInt(o.value))
+    };
+
+    try {
+        const response = await apiRequest('/api/vocabulary/', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showToast('Vocabulary added successfully!', 'success');
+            closeModal('addVocabModal');
+            form.reset();
+            loadDashboardStats();
+            loadRecentVocabulary();
+        } else {
+            const error = await response.json();
+            showToast(Object.values(error).flat()[0] || 'Failed to add vocabulary', 'error');
+        }
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+function speakWord(word) {
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+        }
+    });
+});
+</script>
+{% endblock %}

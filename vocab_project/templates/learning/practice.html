@@ -1,0 +1,1308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Practice - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Learning</div>
+            </div>
+            <a href="{% url 'learning_plans' %}" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plans</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item active">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice</span>
+            </a>
+            <a href="{% url 'analytics' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">Practice</h2>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <!-- Setup View -->
+            <div id="setupView">
+                <div class="page-header">
+                    <h1 class="page-title">Start Practice Session</h1>
+                    <p class="page-subtitle">Choose a learning plan and practice mode</p>
+                </div>
+
+                <div class="practice-setup-card">
+                    <div class="form-group">
+                        <label class="form-label">Select Learning Plan *</label>
+                        <select class="form-control" id="selectPlan">
+                            <option value="">-- Select a plan --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Practice Mode *</label>
+                        <div class="practice-modes">
+                            <div class="practice-mode-card" data-mode="flashcard">
+                                <div class="mode-icon"><i class="fas fa-clone"></i></div>
+                                <h4>Flashcard</h4>
+                                <p>Review cards at your own pace</p>
+                            </div>
+                            <div class="practice-mode-card" data-mode="english_input">
+                                <div class="mode-icon"><i class="fas fa-keyboard"></i></div>
+                                <h4>English Input</h4>
+                                <p>See Vietnamese, type English word</p>
+                            </div>
+                            <div class="practice-mode-card" data-mode="vietnamese_input">
+                                <div class="mode-icon"><i class="fas fa-language"></i></div>
+                                <h4>Vietnamese Input</h4>
+                                <p>See English word, type Vietnamese</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Number of Words</label>
+                        <div class="word-count-options">
+                            <button class="word-count-btn" data-count="10">10</button>
+                            <button class="word-count-btn active" data-count="20">20</button>
+                            <button class="word-count-btn" data-count="50">50</button>
+                            <button class="word-count-btn" data-count="100">All</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg" onclick="startPractice()">
+                        <i class="fas fa-play"></i> Start Practice
+                    </button>
+                </div>
+
+                <!-- Recent Practice Sessions -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Sessions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentSessions">
+                            <div class="loading"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Practice View -->
+            <div id="practiceView" style="display: none;">
+                <div class="practice-header">
+                    <button class="btn btn-secondary btn-sm" onclick="exitPractice()">
+                        <i class="fas fa-times"></i> Exit
+                    </button>
+                    <div class="practice-progress-text">
+                        Question <span id="questionNumber">1</span> of <span id="totalQuestions">20</span>
+                    </div>
+                    <div class="practice-timer" id="practiceTimer">0:00</div>
+                </div>
+
+                <div class="practice-container">
+                    <!-- Flashcard Mode -->
+                    <div id="flashcardMode" class="practice-mode-content" style="display: none;">
+                        <div class="practice-flashcard" onclick="flipPracticeCard()">
+                            <div class="flashcard-front">
+                                <div class="practice-word" id="flashcardWord">Word</div>
+                                <div class="practice-phonetics" id="flashcardPhonetics"></div>
+                                <button class="speak-btn" onclick="event.stopPropagation(); speakCurrentWord()">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                            <div class="flashcard-back">
+                                <div class="practice-meaning" id="flashcardMeaning"></div>
+                                <div class="practice-meaning-vi" id="flashcardMeaningVi"></div>
+                                <div class="practice-example" id="flashcardExample"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Mode -->
+                    <div id="inputMode" class="practice-mode-content" style="display: none;">
+                        <div class="practice-prompt" id="practicePrompt">Prompt</div>
+                        <div class="practice-hint" id="practiceHint"></div>
+                        <div class="practice-input-container">
+                            <input type="text" class="practice-input" id="practiceInput" placeholder="Type your answer..." autocomplete="off">
+                            <button class="btn btn-primary" onclick="submitAnswer()">
+                                <i class="fas fa-check"></i> Submit
+                            </button>
+                        </div>
+                        <div class="practice-feedback" id="practiceFeedback" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Self Evaluation (shown after answer) -->
+                <div id="selfEvaluation" class="self-evaluation" style="display: none;">
+                    <p>How well do you know this word?</p>
+                    <div class="eval-buttons">
+                        <button class="eval-btn review" onclick="evaluateAndNext('review_required')">
+                            <i class="fas fa-redo"></i> Need Review
+                        </button>
+                        <button class="eval-btn learned" onclick="evaluateAndNext('learned')">
+                            <i class="fas fa-check"></i> Learned
+                        </button>
+                        <button class="eval-btn mastered" onclick="evaluateAndNext('mastered')">
+                            <i class="fas fa-star"></i> Mastered
+                        </button>
+                    </div>
+                </div>
+
+                <div class="practice-progress-bar">
+                    <div class="progress-fill" id="practiceProgressFill"></div>
+                </div>
+            </div>
+
+            <!-- Results View -->
+            <div id="resultsView" style="display: none;">
+                <div class="results-container">
+                    <div class="results-header">
+                        <div class="results-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h2>Practice Complete!</h2>
+                    </div>
+
+                    <div class="results-stats" id="resultsStats">
+                        <!-- Stats will be inserted here -->
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn btn-secondary" onclick="showSetup()">
+                            <i class="fas fa-arrow-left"></i> Back to Setup
+                        </button>
+                        <button class="btn btn-primary" onclick="restartPractice()">
+                            <i class="fas fa-redo"></i> Practice Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let plans = [];
+let selectedMode = null;
+let selectedWordCount = 20;
+let practiceSessionId = null;
+let questions = [];
+let currentQuestionIndex = 0;
+let answers = [];
+let startTime = null;
+let timerInterval = null;
+let isFlipped = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadUserInfo();
+    loadPlans();
+    loadRecentSessions();
+    setupEventListeners();
+
+    // Check URL for plan parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const planParam = urlParams.get('plan');
+    if (planParam) {
+        document.getElementById('selectPlan').value = planParam;
+    }
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('userName').textContent = user.username || 'User';
+    document.getElementById('userRole').textContent = user.role || 'learner';
+    document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+}
+
+async function loadPlans() {
+    try {
+        const response = await apiRequest('/api/learning/plans/?status=active');
+        const data = await response.json();
+        plans = data.results || data;
+
+        const select = document.getElementById('selectPlan');
+        select.innerHTML = '<option value="">-- Select a plan --</option>' +
+            plans.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.vocabulary_count} words)</option>`).join('');
+
+        // Re-check URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const planParam = urlParams.get('plan');
+        if (planParam) {
+            select.value = planParam;
+        }
+    } catch (error) {
+        console.error('Failed to load plans:', error);
+    }
+}
+
+async function loadRecentSessions() {
+    try {
+        const response = await apiRequest('/api/learning/practice/');
+        const sessions = await response.json();
+
+        const container = document.getElementById('recentSessions');
+
+        if (sessions.length === 0) {
+            container.innerHTML = '<p class="text-muted">No practice sessions yet.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Mode</th>
+                        <th>Score</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sessions.slice(0, 10).map(s => `
+                        <tr>
+                            <td>${escapeHtml(s.learning_plan_name)}</td>
+                            <td>${formatPracticeType(s.practice_type)}</td>
+                            <td>
+                                <span class="badge ${s.accuracy_rate >= 80 ? 'badge-success' : s.accuracy_rate >= 50 ? 'badge-warning' : 'badge-danger'}">
+                                    ${s.correct_answers}/${s.total_questions} (${s.accuracy_rate}%)
+                                </span>
+                            </td>
+                            <td>${formatDateTime(s.created_at)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Failed to load sessions:', error);
+    }
+}
+
+function formatPracticeType(type) {
+    const types = {
+        'flashcard': 'Flashcard',
+        'english_input': 'English Input',
+        'vietnamese_input': 'Vietnamese Input'
+    };
+    return types[type] || type;
+}
+
+function formatDateTime(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+}
+
+function setupEventListeners() {
+    // Mode selection
+    document.querySelectorAll('.practice-mode-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.practice-mode-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedMode = this.dataset.mode;
+        });
+    });
+
+    // Word count selection
+    document.querySelectorAll('.word-count-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.word-count-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedWordCount = parseInt(this.dataset.count) || 100;
+        });
+    });
+
+    // Enter key to submit
+    document.getElementById('practiceInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            submitAnswer();
+        }
+    });
+}
+
+async function startPractice() {
+    const planId = document.getElementById('selectPlan').value;
+
+    if (!planId) {
+        showToast('Please select a learning plan.', 'error');
+        return;
+    }
+
+    if (!selectedMode) {
+        showToast('Please select a practice mode.', 'error');
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/api/learning/practice/start/', {
+            method: 'POST',
+            body: JSON.stringify({
+                learning_plan_id: parseInt(planId),
+                practice_type: selectedMode,
+                word_count: selectedWordCount
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            showToast(error.error || 'Failed to start practice.', 'error');
+            return;
+        }
+
+        const data = await response.json();
+        practiceSessionId = data.session_id;
+        questions = data.questions;
+        currentQuestionIndex = 0;
+        answers = [];
+        startTime = Date.now();
+
+        // Show practice view
+        document.getElementById('setupView').style.display = 'none';
+        document.getElementById('practiceView').style.display = 'block';
+        document.getElementById('totalQuestions').textContent = questions.length;
+
+        // Start timer
+        startTimer();
+
+        // Show appropriate mode
+        if (selectedMode === 'flashcard') {
+            document.getElementById('flashcardMode').style.display = 'block';
+            document.getElementById('inputMode').style.display = 'none';
+        } else {
+            document.getElementById('flashcardMode').style.display = 'none';
+            document.getElementById('inputMode').style.display = 'block';
+        }
+
+        showQuestion(0);
+    } catch (error) {
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+function showQuestion(index) {
+    if (index >= questions.length) {
+        finishPractice();
+        return;
+    }
+
+    currentQuestionIndex = index;
+    const question = questions[index];
+
+    document.getElementById('questionNumber').textContent = index + 1;
+    document.getElementById('practiceProgressFill').style.width = `${((index) / questions.length) * 100}%`;
+    document.getElementById('selfEvaluation').style.display = 'none';
+    document.getElementById('practiceFeedback').style.display = 'none';
+    document.getElementById('practiceInput').value = '';
+    document.getElementById('practiceInput').disabled = false;
+    isFlipped = false;
+
+    if (selectedMode === 'flashcard') {
+        document.querySelector('.practice-flashcard').classList.remove('flipped');
+        document.getElementById('flashcardWord').textContent = question.prompt;
+        document.getElementById('flashcardPhonetics').textContent = question.hint || '';
+        document.getElementById('flashcardMeaning').textContent = question.meaning || '';
+        document.getElementById('flashcardMeaningVi').textContent = question.meaning_vi || '';
+        document.getElementById('flashcardExample').textContent = question.example_sentence || '';
+    } else {
+        document.getElementById('practicePrompt').textContent = question.prompt;
+        document.getElementById('practiceHint').textContent = question.hint ? `(${question.hint})` : '';
+        document.getElementById('practiceInput').focus();
+    }
+}
+
+function flipPracticeCard() {
+    isFlipped = !isFlipped;
+    document.querySelector('.practice-flashcard').classList.toggle('flipped', isFlipped);
+
+    if (isFlipped) {
+        document.getElementById('selfEvaluation').style.display = 'block';
+    }
+}
+
+function submitAnswer() {
+    const input = document.getElementById('practiceInput');
+    const userAnswer = input.value.trim();
+
+    if (!userAnswer) {
+        showToast('Please enter an answer.', 'warning');
+        return;
+    }
+
+    const question = questions[currentQuestionIndex];
+    const correctAnswer = question.answer;
+    const isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+
+    answers.push({
+        vocabulary_id: question.vocabulary_id,
+        user_answer: userAnswer,
+        correct: isCorrect
+    });
+
+    // Show feedback
+    const feedback = document.getElementById('practiceFeedback');
+    feedback.style.display = 'block';
+    feedback.className = `practice-feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+    feedback.innerHTML = isCorrect
+        ? `<i class="fas fa-check-circle"></i> Correct!`
+        : `<i class="fas fa-times-circle"></i> Incorrect. The answer is: <strong>${escapeHtml(correctAnswer)}</strong>`;
+
+    input.disabled = true;
+    document.getElementById('selfEvaluation').style.display = 'block';
+}
+
+function evaluateAndNext(evaluation) {
+    if (answers.length > currentQuestionIndex) {
+        answers[answers.length - 1].self_evaluation = evaluation;
+    } else {
+        answers.push({
+            vocabulary_id: questions[currentQuestionIndex].vocabulary_id,
+            correct: true,
+            self_evaluation: evaluation
+        });
+    }
+
+    showQuestion(currentQuestionIndex + 1);
+}
+
+async function finishPractice() {
+    stopTimer();
+
+    const duration = Math.floor((Date.now() - startTime) / 1000);
+    const correct = answers.filter(a => a.correct).length;
+
+    try {
+        await apiRequest(`/api/learning/practice/${practiceSessionId}/complete/`, {
+            method: 'POST',
+            body: JSON.stringify({
+                results: answers,
+                duration_seconds: duration
+            })
+        });
+    } catch (error) {
+        console.error('Failed to save results:', error);
+    }
+
+    // Show results
+    document.getElementById('practiceView').style.display = 'none';
+    document.getElementById('resultsView').style.display = 'block';
+
+    const accuracy = Math.round((correct / questions.length) * 100);
+
+    document.getElementById('resultsStats').innerHTML = `
+        <div class="results-grid">
+            <div class="result-stat">
+                <div class="result-value">${questions.length}</div>
+                <div class="result-label">Questions</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-value text-success">${correct}</div>
+                <div class="result-label">Correct</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-value text-danger">${questions.length - correct}</div>
+                <div class="result-label">Incorrect</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-value ${accuracy >= 80 ? 'text-success' : accuracy >= 50 ? 'text-warning' : 'text-danger'}">${accuracy}%</div>
+                <div class="result-label">Accuracy</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-value">${formatTime(duration)}</div>
+                <div class="result-label">Time</div>
+            </div>
+        </div>
+    `;
+}
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('practiceTimer').textContent = formatTime(elapsed);
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function exitPractice() {
+    if (confirm('Are you sure you want to exit? Your progress will be lost.')) {
+        stopTimer();
+        showSetup();
+    }
+}
+
+function showSetup() {
+    document.getElementById('setupView').style.display = 'block';
+    document.getElementById('practiceView').style.display = 'none';
+    document.getElementById('resultsView').style.display = 'none';
+    loadRecentSessions();
+}
+
+function restartPractice() {
+    showSetup();
+    startPractice();
+}
+
+function speakCurrentWord() {
+    const question = questions[currentQuestionIndex];
+    if (question && question.prompt) {
+        const utterance = new SpeechSynthesisUtterance(question.prompt);
+        utterance.lang = selectedMode === 'vietnamese_input' ? 'en-US' : 'vi-VN';
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+</script>
+
+<style>
+/* Practice Setup */
+.practice-setup-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    max-width: 800px;
+}
+
+.practice-modes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.practice-mode-card {
+    background: var(--gray-50);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.practice-mode-card:hover {
+    border-color: var(--primary);
+    background: white;
+}
+
+.practice-mode-card.selected {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.mode-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+}
+
+.practice-mode-card h4 {
+    margin: 0 0 0.5rem;
+    color: var(--gray-900);
+}
+
+.practice-mode-card p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.word-count-options {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.word-count-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--gray-200);
+    background: white;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.word-count-btn:hover {
+    border-color: var(--primary);
+}
+
+.word-count-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+}
+
+/* Practice View */
+.practice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.practice-timer {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-600);
+}
+
+.practice-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+.practice-flashcard {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+}
+
+.practice-flashcard.flipped {
+    transform: rotateY(180deg);
+}
+
+.practice-flashcard .flashcard-front,
+.practice-flashcard .flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+.practice-flashcard .flashcard-back {
+    transform: rotateY(180deg);
+}
+
+.practice-word {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.practice-phonetics {
+    color: var(--gray-500);
+    margin-bottom: 1rem;
+}
+
+.practice-meaning {
+    font-size: 1.25rem;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.practice-meaning-vi {
+    color: var(--primary);
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.practice-example {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+.practice-prompt {
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.practice-hint {
+    text-align: center;
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+}
+
+.practice-input-container {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.practice-input {
+    flex: 1;
+    padding: 1rem;
+    font-size: 1.25rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.practice-input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.practice-feedback {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+    font-weight: 500;
+}
+
+.practice-feedback.correct {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.practice-feedback.incorrect {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.self-evaluation {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.eval-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.eval-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.eval-btn.review {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+.eval-btn.learned {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+    border-color: var(--info);
+}
+
+.eval-btn.mastered {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.eval-btn:hover {
+    transform: scale(1.05);
+}
+
+.practice-progress-bar {
+    height: 4px;
+    background: var(--gray-200);
+    border-radius: 2px;
+    margin-top: 2rem;
+}
+
+.practice-progress-bar .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* Results */
+.results-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.results-header {
+    margin-bottom: 2rem;
+}
+
+.results-icon {
+    font-size: 4rem;
+    color: var(--warning);
+    margin-bottom: 1rem;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.result-stat {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--radius);
+}
+
+.result-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.result-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+}
+
+.results-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Data Table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.data-table th {
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    .practice-setup-card {
+        padding: 1.5rem;
+    }
+
+    .practice-modes {
+        grid-template-columns: 1fr;
+    }
+
+    .practice-mode-card {
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        text-align: left;
+        gap: 1rem;
+    }
+
+    .practice-mode-card .mode-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .practice-mode-card h4 {
+        margin-bottom: 0.25rem;
+    }
+
+    .word-count-options {
+        flex-wrap: wrap;
+    }
+
+    .word-count-btn {
+        flex: 1;
+        min-width: 60px;
+    }
+
+    .practice-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .practice-progress-text {
+        order: -1;
+        width: 100%;
+        text-align: center;
+        font-size: 0.875rem;
+    }
+
+    .practice-container {
+        padding: 1rem 0;
+    }
+
+    .practice-flashcard {
+        min-height: 250px;
+    }
+
+    .practice-word {
+        font-size: 1.75rem;
+    }
+
+    .practice-prompt {
+        font-size: 1.5rem;
+    }
+
+    .practice-input-container {
+        flex-direction: column;
+    }
+
+    .practice-input {
+        font-size: 1rem;
+        padding: 0.75rem;
+    }
+
+    .eval-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .eval-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .results-actions {
+        flex-direction: column;
+    }
+
+    .results-actions .btn {
+        width: 100%;
+    }
+
+    .data-table {
+        font-size: 0.75rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 0.5rem;
+    }
+
+    /* Hide some columns on mobile */
+    .data-table th:nth-child(2),
+    .data-table td:nth-child(2) {
+        display: none;
+    }
+}
+
+/* Responsive - Mobile Small */
+@media (max-width: 480px) {
+    .practice-setup-card {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .page-header .page-subtitle {
+        font-size: 0.875rem;
+    }
+
+    .practice-mode-card {
+        padding: 0.75rem;
+    }
+
+    .practice-mode-card .mode-icon {
+        font-size: 1.25rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: var(--radius);
+    }
+
+    .practice-mode-card h4 {
+        font-size: 0.875rem;
+    }
+
+    .practice-mode-card p {
+        font-size: 0.75rem;
+    }
+
+    .word-count-btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .practice-header {
+        margin-bottom: 1rem;
+    }
+
+    .practice-timer {
+        font-size: 1rem;
+    }
+
+    .practice-flashcard {
+        min-height: 200px;
+    }
+
+    .practice-flashcard .flashcard-front,
+    .practice-flashcard .flashcard-back {
+        padding: 1rem;
+    }
+
+    .practice-word {
+        font-size: 1.5rem;
+    }
+
+    .practice-phonetics {
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .speak-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .practice-meaning {
+        font-size: 1rem;
+    }
+
+    .practice-meaning-vi {
+        font-size: 0.875rem;
+    }
+
+    .practice-example {
+        font-size: 0.75rem;
+    }
+
+    .practice-prompt {
+        font-size: 1.25rem;
+    }
+
+    .practice-hint {
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    .practice-input {
+        font-size: 0.875rem;
+        padding: 0.625rem;
+    }
+
+    .practice-feedback {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+
+    .self-evaluation p {
+        font-size: 0.875rem;
+    }
+
+    .eval-btn {
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .results-container {
+        margin: 1rem auto;
+    }
+
+    .results-icon {
+        font-size: 2.5rem;
+    }
+
+    .results-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .result-stat {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .result-value {
+        font-size: 1.25rem;
+    }
+
+    .result-label {
+        font-size: 0.625rem;
+    }
+
+    .card.mt-4 {
+        margin-top: 1rem !important;
+    }
+
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .card-body {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+    .practice-mode-card {
+        min-height: 60px;
+    }
+
+    .practice-mode-card:active {
+        transform: scale(0.98);
+    }
+
+    .word-count-btn {
+        min-height: 44px;
+    }
+
+    .practice-flashcard {
+        cursor: default;
+    }
+
+    .practice-flashcard:active {
+        transform: scale(0.99);
+    }
+
+    .eval-btn {
+        min-height: 44px;
+    }
+
+    .practice-input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .practice-flashcard {
+        min-height: 180px;
+    }
+
+    .practice-word {
+        font-size: 1.25rem;
+    }
+
+    .practice-flashcard .flashcard-front,
+    .practice-flashcard .flashcard-back {
+        padding: 0.75rem;
+    }
+
+    .eval-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .eval-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+</style>
+{% endblock %}

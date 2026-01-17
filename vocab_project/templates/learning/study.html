@@ -1,0 +1,1289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Study - VocabMaster{% endblock %}
+
+{% block content %}
+<div class="study-wrapper">
+    <!-- Study Header -->
+    <header class="study-header">
+        <a href="{% url 'learning_plans' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Plans</span>
+        </a>
+        <div class="study-title">
+            <h2 id="planName">Loading...</h2>
+            <span class="study-progress" id="studyProgress">0/0</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="endSession()">
+            <i class="fas fa-times"></i> End Session
+        </button>
+    </header>
+
+    <!-- Flashcard Container -->
+    <div class="flashcard-container">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <!-- Front Side -->
+            <div class="flashcard-front">
+                <div class="flashcard-content">
+                    <div class="word-display">
+                        <span class="word" id="cardWord">Loading...</span>
+                        <button class="speak-btn" onclick="event.stopPropagation(); speakWord(currentCard?.word)">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                    </div>
+                    <div class="phonetics" id="cardPhonetics"></div>
+                    <div class="word-type" id="cardWordType"></div>
+                    <div class="meaning" id="cardMeaning"></div>
+                    <div class="meaning-vi" id="cardMeaningVi"></div>
+                </div>
+                <div class="flip-hint">
+                    <i class="fas fa-sync-alt"></i> Click to flip
+                </div>
+            </div>
+
+            <!-- Back Side -->
+            <div class="flashcard-back">
+                <div class="flashcard-content">
+                    <div class="meaning-vi-back" id="cardMeaningViBack"></div>
+                    <div class="example-section">
+                        <label>Example:</label>
+                        <p id="cardExample">No example available</p>
+                    </div>
+                    <div class="note-section">
+                        <label>Your Notes:</label>
+                        <textarea id="cardNote" placeholder="Add your notes here..." onclick="event.stopPropagation()"></textarea>
+                    </div>
+                </div>
+                <div class="flip-hint">
+                    <i class="fas fa-sync-alt"></i> Click to flip back
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="study-controls">
+        <button class="control-btn" id="prevBtn" onclick="prevCard()" disabled>
+            <i class="fas fa-chevron-left"></i>
+            <span>Previous</span>
+        </button>
+
+        <div class="status-buttons">
+            <button class="status-btn review" onclick="setStatus('review_required')" title="Need to review">
+                <i class="fas fa-redo"></i>
+                <span>Review</span>
+            </button>
+            <button class="status-btn learned" onclick="setStatus('learned')" title="I've learned this">
+                <i class="fas fa-check"></i>
+                <span>Learned</span>
+            </button>
+            <button class="status-btn mastered" onclick="setStatus('mastered')" title="I've mastered this">
+                <i class="fas fa-star"></i>
+                <span>Mastered</span>
+            </button>
+        </div>
+
+        <button class="control-btn" id="nextBtn" onclick="nextCard()">
+            <span>Next</span>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar-study">
+            <div class="progress-fill-study" id="progressFill"></div>
+        </div>
+        <div class="progress-stats">
+            <span class="stat new"><i class="fas fa-circle"></i> New: <span id="statNew">0</span></span>
+            <span class="stat learned"><i class="fas fa-circle"></i> Learned: <span id="statLearned">0</span></span>
+            <span class="stat mastered"><i class="fas fa-circle"></i> Mastered: <span id="statMastered">0</span></span>
+            <span class="stat review"><i class="fas fa-circle"></i> Review: <span id="statReview">0</span></span>
+        </div>
+    </div>
+</div>
+
+<!-- Session Complete Modal -->
+<div class="modal-overlay" id="completeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Session Complete!</h3>
+        </div>
+        <div class="modal-body">
+            <div class="completion-stats">
+                <div class="completion-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <p>Great job! You've completed this study session.</p>
+                <div class="session-summary" id="sessionSummary">
+                    <!-- Summary will be inserted here -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="{% url 'learning_plans' %}" class="btn btn-secondary">Back to Plans</a>
+            <button class="btn btn-primary" onclick="restartSession()">
+                <i class="fas fa-redo"></i> Study Again
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+const planId = {{ plan_id }};
+let flashcards = [];
+let currentIndex = 0;
+let currentCard = null;
+let isFlipped = false;
+let sessionState = {
+    completed_ids: [],
+    statuses: {}
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    loadPlanAndFlashcards();
+    setupKeyboardNavigation();
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '{% url "login" %}';
+    }
+}
+
+async function loadPlanAndFlashcards() {
+    try {
+        // Load plan details
+        const planRes = await apiRequest(`/api/learning/plans/${planId}/`);
+        if (!planRes.ok) {
+            const errorData = await planRes.json().catch(() => ({}));
+            console.error('Failed to load plan:', planRes.status, errorData);
+            showToast('Failed to load plan details.', 'error');
+            return;
+        }
+        const plan = await planRes.json();
+        document.getElementById('planName').textContent = plan.name;
+
+        // Try to resume existing session
+        const sessionRes = await apiRequest(`/api/learning/plans/${planId}/start-session/`, {
+            method: 'POST'
+        });
+        if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            if (sessionData.resumed && sessionData.session.state) {
+                sessionState = sessionData.session.state;
+                currentIndex = sessionState.current_index || 0;
+            }
+        } else {
+            console.warn('Could not start/resume session:', sessionRes.status);
+        }
+
+        // Load flashcards with limit for performance
+        const cardsRes = await apiRequest(`/api/learning/plans/${planId}/flashcards/?limit=50`);
+        if (!cardsRes.ok) {
+            const errorData = await cardsRes.json().catch(() => ({}));
+            console.error('Failed to load flashcards:', cardsRes.status, errorData);
+            showToast('Failed to load flashcards.', 'error');
+            return;
+        }
+
+        const cardsData = await cardsRes.json();
+        // Handle both array and object responses
+        flashcards = Array.isArray(cardsData) ? cardsData : (cardsData.results || cardsData.flashcards || []);
+
+        if (flashcards.length === 0) {
+            showToast('No vocabulary available for study in this plan.', 'warning');
+            document.getElementById('cardWord').textContent = 'No cards';
+            return;
+        }
+
+        console.log(`Loaded ${flashcards.length} flashcards`);
+        updateStats();
+        showCard(currentIndex);
+    } catch (error) {
+        console.error('Failed to load:', error);
+        showToast('Failed to load flashcards. Please try again.', 'error');
+    }
+}
+
+function showCard(index) {
+    if (index < 0 || index >= flashcards.length) return;
+
+    currentIndex = index;
+    currentCard = flashcards[index];
+    isFlipped = false;
+
+    // Update card display
+    document.getElementById('flashcard').classList.remove('flipped');
+    document.getElementById('cardWord').textContent = currentCard.word || '';
+    document.getElementById('cardPhonetics').textContent = currentCard.phonetics || '';
+    document.getElementById('cardWordType').textContent = currentCard.word_type ? `(${currentCard.word_type})` : '';
+    document.getElementById('cardMeaning').textContent = currentCard.meaning || '';
+    document.getElementById('cardMeaningVi').textContent = currentCard.meaning_vi || '';
+    document.getElementById('cardMeaningViBack').textContent = currentCard.meaning_vi || currentCard.meaning || '';
+    document.getElementById('cardExample').textContent = currentCard.example_sentence || 'No example available';
+    document.getElementById('cardNote').value = currentCard.user_note || '';
+
+    // Update progress
+    document.getElementById('studyProgress').textContent = `${index + 1}/${flashcards.length}`;
+    const progressPercent = ((index + 1) / flashcards.length) * 100;
+    document.getElementById('progressFill').style.width = `${progressPercent}%`;
+
+    // Update navigation buttons
+    document.getElementById('prevBtn').disabled = index === 0;
+    document.getElementById('nextBtn').disabled = index === flashcards.length - 1;
+
+    // Highlight current status
+    updateStatusButtons(currentCard.status);
+
+    // Save session state
+    saveSessionState();
+}
+
+function flipCard() {
+    isFlipped = !isFlipped;
+    document.getElementById('flashcard').classList.toggle('flipped', isFlipped);
+}
+
+function prevCard() {
+    if (currentIndex > 0) {
+        showCard(currentIndex - 1);
+    }
+}
+
+function nextCard() {
+    if (currentIndex < flashcards.length - 1) {
+        showCard(currentIndex + 1);
+    } else {
+        showCompletionModal();
+    }
+}
+
+async function setStatus(status) {
+    if (!currentCard) return;
+
+    try {
+        const response = await apiRequest(
+            `/api/learning/plans/${planId}/vocabulary/${currentCard.vocabulary_id}/status/`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    status: status,
+                    user_note: document.getElementById('cardNote').value
+                })
+            }
+        );
+
+        if (response.ok) {
+            currentCard.status = status;
+            sessionState.statuses[currentCard.vocabulary_id] = status;
+
+            if (!sessionState.completed_ids.includes(currentCard.id)) {
+                sessionState.completed_ids.push(currentCard.id);
+            }
+
+            updateStatusButtons(status);
+            updateStats();
+            showToast(`Marked as ${status}`, 'success');
+
+            // Auto-advance to next card
+            setTimeout(() => nextCard(), 300);
+        }
+    } catch (error) {
+        showToast('Failed to update status.', 'error');
+    }
+}
+
+function updateStatusButtons(currentStatus) {
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (currentStatus) {
+        const activeBtn = document.querySelector(`.status-btn.${currentStatus.replace('_', '-')}`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+    }
+}
+
+function updateStats() {
+    const stats = { new: 0, learned: 0, mastered: 0, review_required: 0 };
+
+    flashcards.forEach(card => {
+        const status = sessionState.statuses[card.vocabulary_id] || card.status;
+        if (stats.hasOwnProperty(status)) {
+            stats[status]++;
+        }
+    });
+
+    document.getElementById('statNew').textContent = stats.new;
+    document.getElementById('statLearned').textContent = stats.learned;
+    document.getElementById('statMastered').textContent = stats.mastered;
+    document.getElementById('statReview').textContent = stats.review_required;
+}
+
+async function saveSessionState() {
+    sessionState.current_index = currentIndex;
+
+    try {
+        await apiRequest(`/api/learning/plans/${planId}/session/`, {
+            method: 'PATCH',
+            body: JSON.stringify({ state: sessionState })
+        });
+    } catch (error) {
+        console.error('Failed to save session state:', error);
+    }
+}
+
+function showCompletionModal() {
+    const stats = { new: 0, learned: 0, mastered: 0, review_required: 0 };
+
+    flashcards.forEach(card => {
+        const status = sessionState.statuses[card.vocabulary_id] || card.status;
+        if (stats.hasOwnProperty(status)) {
+            stats[status]++;
+        }
+    });
+
+    document.getElementById('sessionSummary').innerHTML = `
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-value">${flashcards.length}</span>
+                <span class="summary-label">Cards Reviewed</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-value text-success">${stats.mastered}</span>
+                <span class="summary-label">Mastered</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-value text-warning">${stats.learned}</span>
+                <span class="summary-label">Learned</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-value text-danger">${stats.review_required}</span>
+                <span class="summary-label">Need Review</span>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('completeModal').classList.add('active');
+    endSessionAPI();
+}
+
+async function endSession() {
+    if (confirm('Are you sure you want to end this session?')) {
+        await endSessionAPI();
+        window.location.href = '{% url "learning_plans" %}';
+    }
+}
+
+async function endSessionAPI() {
+    try {
+        await apiRequest(`/api/learning/plans/${planId}/end-session/`, {
+            method: 'POST'
+        });
+    } catch (error) {
+        console.error('Failed to end session:', error);
+    }
+}
+
+function restartSession() {
+    sessionState = { completed_ids: [], statuses: {}, current_index: 0 };
+    currentIndex = 0;
+    document.getElementById('completeModal').classList.remove('active');
+    showCard(0);
+}
+
+function speakWord(word) {
+    if (!word) return;
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    speechSynthesis.speak(utterance);
+}
+
+function setupKeyboardNavigation() {
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger if typing in textarea
+        if (e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.key) {
+            case 'ArrowLeft':
+                prevCard();
+                break;
+            case 'ArrowRight':
+                nextCard();
+                break;
+            case ' ':
+                e.preventDefault();
+                flipCard();
+                break;
+            case '1':
+                setStatus('review_required');
+                break;
+            case '2':
+                setStatus('learned');
+                break;
+            case '3':
+                setStatus('mastered');
+                break;
+        }
+    });
+}
+
+// Auto-save note on blur
+document.getElementById('cardNote').addEventListener('blur', async function() {
+    if (!currentCard) return;
+
+    try {
+        await apiRequest(
+            `/api/learning/plans/${planId}/vocabulary/${currentCard.vocabulary_id}/status/`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    status: currentCard.status,
+                    user_note: this.value
+                })
+            }
+        );
+        currentCard.user_note = this.value;
+    } catch (error) {
+        console.error('Failed to save note:', error);
+    }
+});
+</script>
+
+<style>
+/* Study Page Specific Styles */
+.study-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.study-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.study-title {
+    text-align: center;
+    color: white;
+}
+
+.study-title h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.study-progress {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* Flashcard */
+.flashcard-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1000px;
+    padding: 1rem;
+}
+
+.flashcard {
+    width: 100%;
+    max-width: 500px;
+    height: 400px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.flashcard.flipped {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}
+
+.flashcard-back {
+    transform: rotateY(180deg);
+}
+
+.flashcard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    overflow-y: auto;
+}
+
+.word-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.word {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.speak-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.speak-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.phonetics {
+    font-size: 1.125rem;
+    color: var(--gray-500);
+    margin-bottom: 0.5rem;
+}
+
+.word-type {
+    font-size: 0.875rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.meaning {
+    font-size: 1.25rem;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.meaning-vi {
+    font-size: 1rem;
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+.meaning-vi-back {
+    font-size: 1.5rem;
+    color: var(--gray-800);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.example-section,
+.note-section {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.example-section label,
+.note-section label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.example-section p {
+    font-style: italic;
+    color: var(--gray-600);
+    margin-top: 0.25rem;
+}
+
+.note-section textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    resize: none;
+    font-family: inherit;
+    margin-top: 0.25rem;
+}
+
+.flip-hint {
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 0.875rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-100);
+}
+
+/* Controls */
+.study-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.status-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.status-btn span {
+    font-size: 0.75rem;
+}
+
+.status-btn.review {
+    color: var(--warning);
+}
+
+.status-btn.review:hover,
+.status-btn.review.active {
+    border-color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.status-btn.learned {
+    color: var(--info);
+}
+
+.status-btn.learned:hover,
+.status-btn.learned.active {
+    border-color: var(--info);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.status-btn.mastered {
+    color: var(--success);
+}
+
+.status-btn.mastered:hover,
+.status-btn.mastered.active {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Progress */
+.progress-container {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    margin-top: auto;
+}
+
+.progress-bar-study {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.progress-fill-study {
+    height: 100%;
+    background: white;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.progress-stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.progress-stats .stat i {
+    font-size: 0.5rem;
+}
+
+.progress-stats .stat.new i { color: var(--gray-300); }
+.progress-stats .stat.learned i { color: var(--info); }
+.progress-stats .stat.mastered i { color: var(--success); }
+.progress-stats .stat.review i { color: var(--warning); }
+
+/* Completion Modal */
+.completion-stats {
+    text-align: center;
+    padding: 1rem;
+}
+
+.completion-icon {
+    font-size: 4rem;
+    color: var(--success);
+    margin-bottom: 1rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.summary-item {
+    text-align: center;
+}
+
+.summary-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+    .study-wrapper {
+        padding: 0.75rem;
+    }
+
+    .study-header {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .back-btn span {
+        display: none;
+    }
+
+    .back-btn {
+        padding: 0.5rem;
+    }
+
+    .study-title h2 {
+        font-size: 1rem;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .flashcard-container {
+        padding: 0.5rem;
+    }
+
+    .flashcard {
+        height: 320px;
+        max-width: 100%;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+        padding: 1.25rem;
+    }
+
+    .word {
+        font-size: 1.75rem;
+    }
+
+    .word-display {
+        gap: 0.5rem;
+    }
+
+    .speak-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .phonetics {
+        font-size: 1rem;
+    }
+
+    .meaning {
+        font-size: 1rem;
+    }
+
+    .meaning-vi {
+        font-size: 0.875rem;
+    }
+
+    .meaning-vi-back {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .study-controls {
+        padding: 0.75rem 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .control-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .control-btn span {
+        display: none;
+    }
+
+    .status-buttons {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
+    .status-btn {
+        min-width: 70px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .status-btn i {
+        font-size: 1rem;
+    }
+
+    .status-btn span {
+        font-size: 0.625rem;
+    }
+
+    .progress-container {
+        padding: 0.75rem;
+    }
+
+    .progress-stats {
+        gap: 0.75rem;
+    }
+
+    .progress-stats .stat {
+        font-size: 0.75rem;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .flip-hint {
+        font-size: 0.75rem;
+        padding-top: 0.75rem;
+    }
+}
+
+/* Responsive - Mobile Small */
+@media (max-width: 480px) {
+    .study-wrapper {
+        padding: 0.5rem;
+    }
+
+    .study-header {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .study-title h2 {
+        font-size: 0.875rem;
+        max-width: 120px;
+    }
+
+    .study-progress {
+        font-size: 0.75rem;
+    }
+
+    .btn-sm {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .btn-sm i {
+        margin-right: 0;
+    }
+
+    .btn-sm .fa-times + span,
+    .btn-sm span:not(:first-child) {
+        display: none;
+    }
+
+    .flashcard-container {
+        padding: 0.25rem;
+        min-height: 280px;
+    }
+
+    .flashcard {
+        height: 280px;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .word {
+        font-size: 1.5rem;
+    }
+
+    .speak-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
+
+    .phonetics {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .word-type {
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .meaning {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .meaning-vi {
+        font-size: 0.75rem;
+    }
+
+    .meaning-vi-back {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .example-section,
+    .note-section {
+        margin-bottom: 0.5rem;
+    }
+
+    .example-section label,
+    .note-section label {
+        font-size: 0.625rem;
+    }
+
+    .example-section p {
+        font-size: 0.75rem;
+        margin-top: 0.125rem;
+    }
+
+    .note-section textarea {
+        min-height: 40px;
+        padding: 0.375rem;
+        font-size: 0.75rem;
+    }
+
+    .flip-hint {
+        font-size: 0.625rem;
+        padding-top: 0.5rem;
+    }
+
+    .study-controls {
+        padding: 0.5rem;
+        gap: 0.375rem;
+    }
+
+    .control-btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius);
+    }
+
+    .status-buttons {
+        gap: 0.375rem;
+        margin-top: 0.375rem;
+    }
+
+    .status-btn {
+        min-width: 60px;
+        padding: 0.375rem 0.5rem;
+        border-radius: var(--radius);
+    }
+
+    .status-btn i {
+        font-size: 0.875rem;
+    }
+
+    .status-btn span {
+        font-size: 0.5rem;
+    }
+
+    .progress-container {
+        padding: 0.5rem;
+        border-radius: var(--radius);
+    }
+
+    .progress-bar-study {
+        height: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-stats {
+        gap: 0.5rem;
+    }
+
+    .progress-stats .stat {
+        font-size: 0.625rem;
+        gap: 0.25rem;
+    }
+
+    .progress-stats .stat i {
+        font-size: 0.375rem;
+    }
+
+    /* Modal responsive */
+    .modal {
+        margin: 0.5rem;
+        max-height: calc(100vh - 1rem);
+    }
+
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    .completion-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .completion-stats p {
+        font-size: 0.875rem;
+    }
+
+    .summary-grid {
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .summary-value {
+        font-size: 1.25rem;
+    }
+
+    .summary-label {
+        font-size: 0.625rem;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .flashcard {
+        cursor: default;
+    }
+
+    .speak-btn,
+    .control-btn,
+    .status-btn {
+        min-height: 44px;
+    }
+
+    .speak-btn:active {
+        transform: scale(0.95);
+    }
+
+    .status-btn:active {
+        transform: scale(0.98);
+    }
+
+    .flip-hint {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .flip-hint::before {
+        content: '👆';
+        font-size: 1rem;
+    }
+
+    .flip-hint i {
+        display: none;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .study-wrapper {
+        padding: 0.5rem;
+    }
+
+    .study-header {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .flashcard-container {
+        padding: 0.25rem;
+    }
+
+    .flashcard {
+        height: 200px;
+        max-width: 400px;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+        padding: 0.75rem;
+    }
+
+    .flashcard-content {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .word-display {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0;
+    }
+
+    .word {
+        font-size: 1.25rem;
+    }
+
+    .phonetics,
+    .word-type {
+        display: inline;
+        margin: 0 0.25rem;
+    }
+
+    .meaning,
+    .meaning-vi {
+        font-size: 0.75rem;
+    }
+
+    .flip-hint {
+        padding-top: 0.5rem;
+        font-size: 0.625rem;
+    }
+
+    .study-controls {
+        padding: 0.25rem;
+        gap: 0.25rem;
+    }
+
+    .status-buttons {
+        order: 0;
+        width: auto;
+        margin-top: 0;
+    }
+
+    .status-btn {
+        flex-direction: row;
+        min-width: auto;
+        padding: 0.375rem 0.5rem;
+        gap: 0.25rem;
+    }
+
+    .progress-container {
+        padding: 0.375rem 0.5rem;
+    }
+
+    .progress-bar-study {
+        margin-bottom: 0.375rem;
+    }
+}
+</style>
+{% endblock %}
