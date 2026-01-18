@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, get_user_model
+from django.http import JsonResponse
 
 from .serializers import UserSerializer, UserRegistrationSerializer, LoginSerializer
 
@@ -30,6 +31,14 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        # Check if user is already logged in
+        if request.user and request.user.is_authenticated:
+            return Response({
+                'message': 'Already logged in',
+                'redirect': '/dashboard/',
+                'user': UserSerializer(request.user).data
+            }, status=status.HTTP_200_OK)
+
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -42,7 +51,8 @@ class LoginView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
                 'user': UserSerializer(user).data,
-                'token': token.key
+                'token': token.key,
+                'redirect': '/dashboard/'
             })
         return Response(
             {'error': 'Invalid credentials'},
