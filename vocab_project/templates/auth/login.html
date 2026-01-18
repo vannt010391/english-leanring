@@ -16,13 +16,22 @@
 
         <form class="auth-form" id="loginForm">
             <div class="form-group">
-                <label class="form-label" for="username">Username</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                <label class="form-label" for="username">
+                    <i class="fas fa-user"></i> Username
+                </label>
+                <input type="text" class="form-control form-control-premium" id="username" name="username" placeholder="Enter your username" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                <label class="form-label" for="password">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <div class="password-input-wrapper">
+                    <input type="password" class="form-control form-control-premium" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="btn-password-toggle" id="togglePassword" onclick="togglePasswordVisibility()" title="Show/Hide password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group d-flex justify-between align-center">
@@ -44,6 +53,22 @@
 </div>
 
 <script>
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+    const icon = toggleBtn.querySelector('i');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -68,6 +93,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const data = await response.json();
 
         if (response.ok) {
+            // Check if already logged in
+            if (data.message === 'Already logged in') {
+                showToast('You are already logged in', 'info');
+                setTimeout(() => {
+                    window.location.href = data.redirect || '{% url "dashboard" %}';
+                }, 500);
+                return;
+            }
+
             // Show success icon
             submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Login successful!';
             submitBtn.style.backgroundColor = '#10b981';
@@ -80,7 +114,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             
             // Redirect after a short delay to show the success state
             setTimeout(() => {
-                window.location.href = '{% url "dashboard" %}';
+                window.location.href = data.redirect || '{% url "dashboard" %}';
             }, 500);
         } else {
             showToast(data.error || 'Login failed', 'error');
