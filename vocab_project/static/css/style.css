@@ -95,7 +95,8 @@ a:hover {
     color: white;
     position: fixed;
     height: 100vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     transition: var(--transition);
     z-index: 1000;
 }
@@ -103,12 +104,19 @@ a:hover {
 .sidebar-header {
     padding: 1.5rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
 }
 
 .sidebar-logo {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.sidebar-logo:hover {
+    opacity: 0.8;
 }
 
 .sidebar-logo-icon {
@@ -129,6 +137,26 @@ a:hover {
 
 .sidebar-nav {
     padding: 1rem 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
 }
 
 .nav-section {
@@ -172,13 +200,10 @@ a:hover {
 }
 
 .sidebar-footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     padding: 1rem 1.5rem;
     border-top: 1px solid rgba(255,255,255,0.1);
     background: var(--gray-900);
+    flex-shrink: 0;
 }
 
 .user-info {
@@ -316,6 +341,105 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* User Menu in Header */
+.user-menu {
+    position: relative;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.user-info-header:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.user-avatar-small {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.user-details-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.user-name-header {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--gray-900);
+    line-height: 1.2;
+}
+
+.user-role-header {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    text-transform: capitalize;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.user-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--gray-700);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.dropdown-item:hover {
+    background: var(--gray-100);
+    color: var(--primary);
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--gray-200);
+    margin: 0.5rem 0;
 }
 
 /* Page Content */
@@ -564,6 +688,10 @@ a:hover {
     border-radius: var(--radius);
     transition: var(--transition);
     background: white;
+}
+
+#password {
+    padding-right: 2.5rem;
 }
 
 .form-control:focus {
@@ -963,10 +1091,12 @@ select.form-control {
 .auth-card {
     background: white;
     border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     width: 100%;
     max-width: 440px;
     padding: 2.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .auth-logo {
@@ -1000,10 +1130,96 @@ select.form-control {
     margin-bottom: 1.5rem;
 }
 
+.auth-form .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    font-size: 0.95rem;
+}
+
+.auth-form .form-label i {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.form-control-premium {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid var(--gray-200);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.form-control-premium:focus {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.form-control-premium::placeholder {
+    color: var(--gray-400);
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-control-premium {
+    padding-right: 2.75rem;
+    width: 100%;
+}
+
+/* Password visibility toggle button */
+.btn-password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 0.375rem;
+}
+
+.btn-password-toggle:hover {
+    color: var(--primary);
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.btn-password-toggle:active {
+    transform: scale(0.95);
+}
+
+.btn-password-toggle:focus {
+    outline: none;
+    color: var(--primary);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
 .auth-form .btn {
     width: 100%;
     padding: 0.875rem;
     font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.auth-form .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.auth-form .btn:active {
+    transform: translateY(0);
 }
 
 .auth-divider {

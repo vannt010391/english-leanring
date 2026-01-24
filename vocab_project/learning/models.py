@@ -22,6 +22,7 @@ class LearningPlan(models.Model):
     end_date = models.DateField()
     daily_study_time = models.PositiveIntegerField(help_text='Minutes per day')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    words_per_session = models.PositiveIntegerField(default=10, help_text='Words targeted per study session')
     selected_levels = models.JSONField(default=list)  # ['A1', 'B1', ...]
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -125,6 +126,12 @@ class LearningProgress(models.Model):
     words_mastered = models.PositiveIntegerField(default=0)
     words_review_required = models.PositiveIntegerField(default=0)
     study_time_minutes = models.PositiveIntegerField(default=0)
+    planned_words = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=15,
+        choices=[('upcoming', 'Upcoming'), ('completed', 'Completed'), ('missed', 'Missed')],
+        default='upcoming'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -279,7 +286,7 @@ class LearnerAnalytics(models.Model):
         return f"Analytics - {self.user.username} - {plan_name}"
 
 
-class Notification(models.Model):
+class LearningNotification(models.Model):
     """
     Notifications for risk alerts, reminders, and encouragement.
     """

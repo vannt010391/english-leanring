@@ -1,0 +1,157 @@
+<!-- Sidebar Component - Used across all pages -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <span class="sidebar-logo-text">VocabMaster</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <!-- Main Menu -->
+        <div class="nav-section">
+            <div class="nav-section-title">Menu</div>
+        </div>
+        <a href="{% url 'dashboard' %}" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <!-- Vocabulary Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Vocabulary</div>
+        </div>
+        <a href="{% url 'vocabulary_list' %}" class="nav-item">
+            <i class="fas fa-spell-check"></i>
+            <span>Vocabulary</span>
+        </a>
+        <a href="{% url 'topics_list' %}" class="nav-item">
+            <i class="fas fa-tags"></i>
+            <span>Topics</span>
+        </a>
+        <a href="{% url 'learning_plans' %}" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Learning Plan</span>
+        </a>
+        <a href="{% url 'practice' %}" class="nav-item">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Practice Vocabulary</span>
+        </a>
+        <a href="{% url 'analytics' %}" class="nav-item" id="vocabAnalyticsLink" style="display: none;">
+            <i class="fas fa-chart-bar"></i>
+            <span>Analytics</span>
+        </a>
+
+        <!-- Grammar Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Grammar</div>
+        </div>
+        <a href="/grammar/" class="nav-item">
+            <i class="fas fa-book"></i>
+            <span>Grammar Resource</span>
+        </a>
+        <a href="/grammar/practice/" class="nav-item">
+            <i class="fas fa-pen"></i>
+            <span>Practice Grammar</span>
+        </a>
+
+        <!-- Writing Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Writing</div>
+        </div>
+        <a href="/writing/" class="nav-item">
+            <i class="fas fa-file-alt"></i>
+            <span>Writing Resource</span>
+        </a>
+        <a href="/writing/practice/" class="nav-item">
+            <i class="fas fa-edit"></i>
+            <span>Practice Writing</span>
+        </a>
+
+        <!-- Listening Section -->
+        <div class="nav-section">
+            <div class="nav-section-title">Listening</div>
+        </div>
+        <a href="/listening/" class="nav-item">
+            <i class="fas fa-headphones"></i>
+            <span>Listening Resource</span>
+        </a>
+        <a href="/listening/practice/" class="nav-item">
+            <i class="fas fa-play-circle"></i>
+            <span>Practice Listening</span>
+        </a>
+
+        <!-- Admin Panel (shown only for admins) -->
+        <div class="nav-section" id="adminSection" style="display: none;">
+            <div class="nav-section-title">Admin Panel</div>
+        </div>
+        <a href="{% url 'admin_users' %}" class="nav-item" id="adminUsersLink" style="display: none;">
+            <i class="fas fa-users-cog"></i>
+            <span>User Management</span>
+        </a>
+        <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+            <i class="fas fa-bell"></i>
+            <span>Notification Management</span>
+        </a>
+        <a href="{% url 'admin_system_vocabulary' %}" class="nav-item" id="adminVocabManagementLink" style="display: none;">
+            <i class="fas fa-database"></i>
+            <span>Vocabulary Management</span>
+        </a>
+        <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+            <i class="fas fa-tasks"></i>
+            <span>Learning Plan Management</span>
+        </a>
+        <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+            <i class="fas fa-chart-line"></i>
+            <span>Practice Monitoring</span>
+        </a>
+        <a href="/admin/grammar/" class="nav-item" id="adminGrammarLink" style="display: none;">
+            <i class="fas fa-book-reader"></i>
+            <span>Grammar Management</span>
+        </a>
+        <a href="/admin/writing/" class="nav-item" id="adminWritingLink" style="display: none;">
+            <i class="fas fa-pen-fancy"></i>
+            <span>Writing Management</span>
+        </a>
+        <a href="/admin/listening/" class="nav-item" id="adminListeningLink" style="display: none;">
+            <i class="fas fa-volume-up"></i>
+            <span>Listening Management</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-details">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-role" id="userRole">-</div>
+            </div>
+            <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+</aside>
+
+<script>
+// Show/hide admin menu items based on user role
+document.addEventListener('DOMContentLoaded', function() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (user.role === 'admin') {
+        // Show all admin sections and links
+        document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('adminUsersLink').style.display = 'flex';
+        document.getElementById('adminNotificationsLink').style.display = 'flex';
+        document.getElementById('adminVocabManagementLink').style.display = 'flex';
+        document.getElementById('adminLearningPlansLink').style.display = 'flex';
+        document.getElementById('adminPracticeMonitorLink').style.display = 'flex';
+        document.getElementById('adminGrammarLink').style.display = 'flex';
+        document.getElementById('adminWritingLink').style.display = 'flex';
+        document.getElementById('adminListeningLink').style.display = 'flex';
+        document.getElementById('vocabAnalyticsLink').style.display = 'flex';
+    }
+});
+</script>

@@ -30,3 +30,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.english.iamstudying.tech',
 ]
 CSRF_USE_SESSIONS = True
+
+# Login URL for @login_required redirects
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+
+# CORS settings for production
+CORS_ALLOW_CREDENTIALS = True

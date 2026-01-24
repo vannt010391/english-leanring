@@ -1,0 +1,1036 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - System Vocabulary Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-primary {
+        background-color: white;
+        color: #667eea;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .vocabulary-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .vocabulary-table thead {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .vocabulary-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .vocabulary-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .vocabulary-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .level-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .level-a1 { background-color: #28a745; }
+    .level-a2 { background-color: #28a745; }
+    .level-b1 { background-color: #ffc107; }
+    .level-b2 { background-color: #ffc107; }
+    .level-c1 { background-color: #dc3545; }
+    .level-c2 { background-color: #dc3545; }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .btn-edit {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        overflow-y: auto;
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .close-btn:hover {
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 10px;
+        background-color: #667eea;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+        background-color: #5568d3;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .csv-upload-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .csv-upload-section h3 {
+        margin-top: 0;
+    }
+
+    .upload-area {
+        border: 2px dashed #667eea;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .upload-area:hover {
+        background-color: #f8f9ff;
+    }
+
+    .upload-area.dragover {
+        background-color: #f0f1ff;
+        border-color: #764ba2;
+    }
+
+    #csvFile {
+        display: none;
+    }
+
+    .topics-select {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .topics-select label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: normal;
+    }
+
+    .topics-select input[type="checkbox"] {
+        margin-right: 8px;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .pagination button:hover {
+        background: #f8f9fa;
+    }
+
+    .pagination button.active {
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'dashboard' %}" class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- Admin Panel Section (Admin Only) -->
+            <div class="nav-section" id="adminPanelSection" style="display: none;">
+                <div class="nav-section-title">Admin Panel</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item" id="adminDashboardLink" style="display: none;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'admin_users' %}" class="nav-item" id="adminUsersLink" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
+            </a>
+            <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span>Notification Management</span>
+            </a>
+
+            <!-- Dashboard Section (Learner Only) -->
+            <div class="nav-section" id="learnerDashboardSection" style="display: none;">
+                <div class="nav-section-title">Dashboard</div>
+            </div>
+            <a href="{% url 'analytics' %}" class="nav-item" id="learnerAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+
+            <!-- Vocabulary Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Vocabulary</div>
+            </div>
+            <a href="{% url 'admin_analytics' %}" class="nav-item" id="adminVocabAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="{% url 'admin_vocabulary_management' %}" class="nav-item active" id="adminVocabManagementLink" style="display: none;">
+                <i class="fas fa-database"></i>
+                <span>Vocabulary Management</span>
+            </a>
+            <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+                <i class="fas fa-tasks"></i>
+                <span>Learning Plan Management</span>
+            </a>
+            <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Vocabulary (Monitoring)</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" id="learnerVocabularyLink">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'learning_plans' %}" class="nav-item" id="learnerLearningPlanLink">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plan</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item" id="learnerPracticeVocabLink">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice Vocabulary</span>
+            </a>
+
+            <!-- Grammar Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Grammar</div>
+            </div>
+            <a href="/admin/grammar/" class="nav-item" id="adminGrammarManagementLink" style="display: none;">
+                <i class="fas fa-book-reader"></i>
+                <span>Grammar Resource Management</span>
+            </a>
+            <a href="/admin/grammar/practice-monitoring/" class="nav-item" id="adminGrammarMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Grammar (Monitoring)</span>
+            </a>
+            <a href="/grammar/" class="nav-item" id="learnerGrammarResourceLink">
+                <i class="fas fa-book"></i>
+                <span>Grammar Resource</span>
+            </a>
+            <a href="/grammar/practice/" class="nav-item" id="learnerGrammarPracticeLink">
+                <i class="fas fa-pen"></i>
+                <span>Practice Grammar</span>
+            </a>
+
+            <!-- Writing Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Writing</div>
+            </div>
+            <a href="/admin/writing/" class="nav-item" id="adminWritingManagementLink" style="display: none;">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Writing Resource Management</span>
+            </a>
+            <a href="/admin/writing/practice-monitoring/" class="nav-item" id="adminWritingMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Writing (Monitoring)</span>
+            </a>
+            <a href="/writing/" class="nav-item" id="learnerWritingResourceLink">
+                <i class="fas fa-file-alt"></i>
+                <span>Writing Resource</span>
+            </a>
+            <a href="/writing/practice/" class="nav-item" id="learnerWritingPracticeLink">
+                <i class="fas fa-edit"></i>
+                <span>Practice Writing</span>
+            </a>
+
+            <!-- Listening Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Listening</div>
+            </div>
+            <a href="/admin/listening/" class="nav-item" id="adminListeningManagementLink" style="display: none;">
+                <i class="fas fa-volume-up"></i>
+                <span>Listening Resource Management</span>
+            </a>
+            <a href="/admin/listening/practice-monitoring/" class="nav-item" id="adminListeningMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Study / Practice Listening (Monitoring)</span>
+            </a>
+            <a href="/listening/" class="nav-item" id="learnerListeningResourceLink">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Resource</span>
+            </a>
+            <a href="/listening/practice/" class="nav-item" id="learnerListeningPracticeLink">
+                <i class="fas fa-play-circle"></i>
+                <span>Practice Listening</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">System Vocabulary Management</h2>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="openAddVocabularyModal()">
+                    <i class="fas fa-plus"></i> Add Vocabulary
+                </button>
+                <button class="btn btn-primary" onclick="document.getElementById('csvUploadModal').classList.add('active')">
+                    <i class="fas fa-file-upload"></i> Import CSV
+                </button>
+                <button class="header-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+                <div class="user-menu">
+                    <div class="user-info-header" onclick="toggleUserMenu()">
+                        <div class="user-avatar-small" id="userAvatarHeader">U</div>
+                        <div class="user-details-header">
+                            <div class="user-name-header" id="userNameHeader">Loading...</div>
+                            <div class="user-role-header" id="userRoleHeader">-</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="{% url 'dashboard' %}" class="dropdown-item">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-cog"></i> Profile Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="logout(); return false;" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="admin-container">
+                <!-- CSV Upload Section -->
+                <div class="csv-upload-section">
+                    <h3>Quick CSV Import</h3>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('csvFile').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #667eea; margin-bottom: 10px; display: block;"></i>
+                        <p><strong>Click to upload or drag CSV file</strong></p>
+                        <p style="font-size: 12px; color: #999;">CSV should have columns: word, meaning, meaning_vi, phonetics, word_type, level, note, example_sentence</p>
+                        <input type="file" id="csvFile" accept=".csv" onchange="handleCsvUpload(event)">
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="searchInput">Search</label>
+                <input type="text" id="searchInput" placeholder="Search by word or meaning..." onkeyup="applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label for="levelFilter">Level</label>
+                <select id="levelFilter" onchange="applyFilters()">
+                    <option value="">All Levels</option>
+                    <option value="A1">A1 - Beginner</option>
+                    <option value="A2">A2 - Elementary</option>
+                    <option value="B1">B1 - Intermediate</option>
+                    <option value="B2">B2 - Upper Intermediate</option>
+                    <option value="C1">C1 - Advanced</option>
+                    <option value="C2">C2 - Proficiency</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="typeFilter">Word Type</label>
+                <select id="typeFilter" onchange="applyFilters()">
+                    <option value="">All Types</option>
+                    <option value="noun">Noun</option>
+                    <option value="verb">Verb</option>
+                    <option value="adjective">Adjective</option>
+                    <option value="adverb">Adverb</option>
+                    <option value="preposition">Preposition</option>
+                    <option value="phrase">Phrase</option>
+                    <option value="idiom">Idiom</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vocabulary Table -->
+    <div id="vocabularyContainer">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Loading vocabulary...
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Vocabulary Modal -->
+<div id="vocabModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="vocabModalTitle">Add New Vocabulary</h2>
+            <button class="close-btn" onclick="closeVocabModal()">&times;</button>
+        </div>
+        <form id="vocabForm" onsubmit="saveVocabulary(event)">
+            <div class="form-group">
+                <label for="word">Word *</label>
+                <input type="text" id="word" required>
+            </div>
+            <div class="form-group">
+                <label for="meaning">English Meaning *</label>
+                <textarea id="meaning" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="meaning_vi">Vietnamese Meaning</label>
+                <textarea id="meaning_vi"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="phonetics">Phonetics</label>
+                <input type="text" id="phonetics" placeholder="e.g., /əˈpɛl/">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="word_type">Word Type</label>
+                    <select id="word_type">
+                        <option value="">Select Type</option>
+                        <option value="noun">Noun</option>
+                        <option value="verb">Verb</option>
+                        <option value="adjective">Adjective</option>
+                        <option value="adverb">Adverb</option>
+                        <option value="preposition">Preposition</option>
+                        <option value="conjunction">Conjunction</option>
+                        <option value="pronoun">Pronoun</option>
+                        <option value="phrase">Phrase</option>
+                        <option value="idiom">Idiom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="level">Level</label>
+                    <select id="level">
+                        <option value="">Select Level</option>
+                        <option value="A1">A1 - Beginner</option>
+                        <option value="A2">A2 - Elementary</option>
+                        <option value="B1">B1 - Intermediate</option>
+                        <option value="B2">B2 - Upper Intermediate</option>
+                        <option value="C1">C1 - Advanced</option>
+                        <option value="C2">C2 - Proficiency</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="example_sentence">Example Sentence</label>
+                <textarea id="example_sentence"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="note">Note</label>
+                <textarea id="note"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Topics</label>
+                <div class="topics-select" id="topicsSelect"></div>
+            </div>
+            <button type="submit" class="btn-submit">Save Vocabulary</button>
+        </form>
+    </div>
+</div>
+
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allVocabulary = [];
+    let allTopics = [];
+    let currentEditingVocabId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTopics();
+        loadVocabulary();
+        setupDragAndDrop();
+    });
+
+    function setupDragAndDrop() {
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('csvFile').files = files;
+                handleCsvUpload({ target: { files: files } });
+            }
+        });
+    }
+
+    async function loadTopics() {
+        try {
+            const response = await fetch('/api/topics/', {
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                allTopics = data.results || data;
+                renderTopicsSelect();
+            }
+        } catch (error) {
+            console.error('Error loading topics:', error);
+        }
+    }
+
+    function renderTopicsSelect() {
+        const container = document.getElementById('topicsSelect');
+        container.innerHTML = '';
+        allTopics.forEach(topic => {
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = topic.id;
+            checkbox.dataset.topicId = topic.id;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(topic.name));
+            container.appendChild(label);
+        });
+    }
+
+    async function loadVocabulary() {
+        try {
+            const response = await fetch('/api/vocabulary/system/', {
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            allVocabulary = data.results || data;
+            renderVocabulary(allVocabulary);
+        } catch (error) {
+            console.error('Error loading vocabulary:', error);
+            document.getElementById('vocabularyContainer').innerHTML = `
+                <div class="empty-state">
+                    <p>Error loading vocabulary. Please try again.</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderVocabulary(vocabulary) {
+        if (vocabulary.length === 0) {
+            document.getElementById('vocabularyContainer').innerHTML = `
+                <div class="empty-state">
+                    <p>No system vocabulary yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <table class="vocabulary-table">
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>Meaning</th>
+                        <th>Vietnamese</th>
+                        <th>Type</th>
+                        <th>Level</th>
+                        <th>Topics</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        vocabulary.forEach(vocab => {
+            const levelClass = `level-${vocab.level ? vocab.level.toLowerCase() : ''}`;
+            const topics = vocab.topics.map(t => t.name).join(', ') || '-';
+
+            html += `
+                <tr>
+                    <td><strong>${vocab.word}</strong></td>
+                    <td>${vocab.meaning.substring(0, 50)}...</td>
+                    <td>${vocab.meaning_vi ? vocab.meaning_vi.substring(0, 40) + '...' : '-'}</td>
+                    <td>${vocab.word_type || '-'}</td>
+                    <td>${vocab.level ? `<span class="level-badge ${levelClass}">${vocab.level}</span>` : '-'}</td>
+                    <td><small>${topics}</small></td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="editVocabulary(${vocab.id})">Edit</button>
+                        <button class="btn-action btn-delete" onclick="deleteVocabulary(${vocab.id})">Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        document.getElementById('vocabularyContainer').innerHTML = html;
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const level = document.getElementById('levelFilter').value;
+        const type = document.getElementById('typeFilter').value;
+
+        const filtered = allVocabulary.filter(vocab => {
+            const matchesSearch = !search || 
+                vocab.word.toLowerCase().includes(search) || 
+                vocab.meaning.toLowerCase().includes(search);
+            const matchesLevel = !level || vocab.level === level;
+            const matchesType = !type || vocab.word_type === type;
+            
+            return matchesSearch && matchesLevel && matchesType;
+        });
+
+        renderVocabulary(filtered);
+    }
+
+    function openAddVocabularyModal() {
+        currentEditingVocabId = null;
+        document.getElementById('vocabModalTitle').textContent = 'Add New Vocabulary';
+        document.getElementById('vocabForm').reset();
+        document.querySelectorAll('.topics-select input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('vocabModal').classList.add('active');
+    }
+
+    function closeVocabModal() {
+        document.getElementById('vocabModal').classList.remove('active');
+    }
+
+    async function editVocabulary(vocabId) {
+        const vocab = allVocabulary.find(v => v.id === vocabId);
+        if (!vocab) return;
+
+        currentEditingVocabId = vocabId;
+        document.getElementById('vocabModalTitle').textContent = 'Edit Vocabulary';
+        document.getElementById('word').value = vocab.word;
+        document.getElementById('meaning').value = vocab.meaning;
+        document.getElementById('meaning_vi').value = vocab.meaning_vi || '';
+        document.getElementById('phonetics').value = vocab.phonetics || '';
+        document.getElementById('word_type').value = vocab.word_type || '';
+        document.getElementById('level').value = vocab.level || '';
+        document.getElementById('example_sentence').value = vocab.example_sentence || '';
+        document.getElementById('note').value = vocab.note || '';
+
+        // Update topic checkboxes
+        document.querySelectorAll('.topics-select input[type="checkbox"]').forEach(cb => {
+            cb.checked = vocab.topics.some(t => t.id == cb.value);
+        });
+
+        document.getElementById('vocabModal').classList.add('active');
+    }
+
+    async function saveVocabulary(event) {
+        event.preventDefault();
+
+        const selectedTopics = Array.from(document.querySelectorAll('.topics-select input[type="checkbox"]:checked'))
+            .map(cb => parseInt(cb.value));
+
+        const vocabData = {
+            word: document.getElementById('word').value,
+            meaning: document.getElementById('meaning').value,
+            meaning_vi: document.getElementById('meaning_vi').value || null,
+            phonetics: document.getElementById('phonetics').value || null,
+            word_type: document.getElementById('word_type').value || null,
+            level: document.getElementById('level').value || null,
+            example_sentence: document.getElementById('example_sentence').value || null,
+            note: document.getElementById('note').value || null,
+            topic_ids: selectedTopics
+        };
+
+        try {
+            let url = '/api/vocabulary/system/';
+            let method = 'POST';
+
+            if (currentEditingVocabId) {
+                url += `${currentEditingVocabId}/`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(vocabData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(JSON.stringify(error));
+            }
+
+            showToast(currentEditingVocabId ? 'Vocabulary updated successfully' : 'Vocabulary created successfully', 'success');
+            closeVocabModal();
+            loadVocabulary();
+        } catch (error) {
+            console.error('Error saving vocabulary:', error);
+            showToast('Error saving vocabulary', 'error');
+        }
+    }
+
+    async function deleteVocabulary(vocabId) {
+        if (!confirm('Are you sure you want to delete this vocabulary?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/vocabulary/system/${vocabId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            showToast('Vocabulary deleted successfully', 'success');
+            loadVocabulary();
+        } catch (error) {
+            console.error('Error deleting vocabulary:', error);
+            showToast('Error deleting vocabulary', 'error');
+        }
+    }
+
+    async function handleCsvUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/vocabulary/system/import_csv/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showToast(`${data.created_count} new items imported, ${data.updated_count} updated`, 'success');
+                if (data.errors && data.errors.length > 0) {
+                    console.warn('Import errors:', data.errors);
+                }
+                loadVocabulary();
+            } else {
+                showToast('Error importing CSV: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading CSV:', error);
+            showToast('Error uploading CSV', 'error');
+        }
+
+        document.getElementById('csvFile').value = '';
+    }
+
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease;
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        `;
+        document.body.appendChild(container);
+        return container;
+    }
+</script>
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}

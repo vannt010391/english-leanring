@@ -30,6 +30,49 @@ async function apiRequest(url, options = {}) {
     return response;
 }
 
+// Verify token validity on page load
+async function verifyTokenOnPageLoad() {
+    const token = localStorage.getItem('token');
+    
+    // If on login/register pages, skip verification
+    if (window.location.pathname === '/login/' || window.location.pathname === '/register/') {
+        return;
+    }
+    
+    // If we have a token, try to verify it
+    if (token) {
+        try {
+            const response = await fetch('/api/auth/profile/', {
+                headers: {
+                    'Authorization': `Token ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            });
+            
+            if (response.status === 401) {
+                // Token is invalid, clear and redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login/?next=' + window.location.pathname;
+            }
+        } catch (error) {
+            console.warn('Could not verify token:', error);
+            // Don't redirect on network errors
+        }
+    }
+    
+    // If we don't have a token but have a cookie (from backend), that's fine
+    // The decorator will handle authentication via the cookie
+}
+
+// Call on DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', verifyTokenOnPageLoad);
+} else {
+    verifyTokenOnPageLoad();
+}
+
 // Toast Notifications
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -164,6 +207,9 @@ document.addEventListener('keydown', function(e) {
 
 // Global Search
 document.addEventListener('DOMContentLoaded', function() {
+    // Load user profile
+    loadUserProfile();
+
     const globalSearch = document.getElementById('globalSearch');
     if (globalSearch) {
         globalSearch.addEventListener('keypress', function(e) {
@@ -261,6 +307,30 @@ function isAdmin() {
     return user && user.role === 'admin';
 }
 
+// Load user profile and display admin menu if applicable
+function loadUserProfile() {
+    const userNameEl = document.getElementById('userName');
+    const userRoleEl = document.getElementById('userRole');
+    const userAvatarEl = document.getElementById('userAvatar');
+    const adminSection = document.getElementById('adminSection');
+    const adminUsersLink = document.getElementById('adminUsersLink');
+    const adminVocabLink = document.getElementById('adminVocabLink');
+
+    const user = getCurrentUser();
+    if (!user) return;
+
+    if (userNameEl) userNameEl.textContent = user.username;
+    if (userRoleEl) userRoleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+    if (userAvatarEl) userAvatarEl.textContent = user.username.charAt(0).toUpperCase();
+
+    // Show/hide admin menu
+    if (user.role === 'admin') {
+        if (adminSection) adminSection.style.display = 'block';
+        if (adminUsersLink) adminUsersLink.style.display = 'flex';
+        if (adminVocabLink) adminVocabLink.style.display = 'flex';
+    }
+}
+
 // Logout Function
 async function logout() {
     try {
@@ -273,11 +343,99 @@ async function logout() {
     window.location.href = '/login/';
 }
 
+// Vocabulary Tab Switching
+let currentVocabTab = 'all';
+
+function switchVocabTab(tab) {
+    currentVocabTab = tab;
+    
+    // Update tab buttons
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => {
+        btn.style.color = '#999';
+        btn.style.borderBottom = 'none';
+        btn.style.marginBottom = '0';
+    });
+    
+    // Highlight active tab
+    const activeBtn = document.getElementById(tab + 'VocabTab') || document.getElementById(tab + 'Tab');
+    if (activeBtn) {
+        activeBtn.style.color = '#667eea';
+        activeBtn.style.borderBottom = '3px solid #667eea';
+        activeBtn.style.marginBottom = '-2px';
+    }
+    
+    // Reload vocabulary with filter
+    if (typeof filterVocabulary === 'function') {
+        filterVocabulary();
+    }
+}
+
 // Initialize tooltips (if needed)
 function initTooltips() {
     document.querySelectorAll('[title]').forEach(el => {
         // Could add custom tooltip implementation here
     });
+}
+
+// Update Sidebar for Role-Based Access
+function updateSidebarForRole() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.role === 'admin';
+    
+    if (isAdmin) {
+        // Show admin-only sections and links
+        const adminElements = [
+            'adminPanelSection', 'adminDashboardLink', 'adminUsersLink', 'adminNotificationsLink',
+            'adminVocabAnalyticsLink', 'adminVocabManagementLink', 'adminLearningPlansLink', 'adminPracticeMonitorLink',
+            'adminGrammarManagementLink', 'adminGrammarMonitorLink',
+            'adminWritingManagementLink', 'adminWritingMonitorLink',
+            'adminListeningManagementLink', 'adminListeningMonitorLink'
+        ];
+        adminElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = id.includes('Section') ? 'block' : 'flex';
+        });
+        
+        // Hide learner-only sections
+        const learnerElements = [
+            'learnerDashboardSection', 'learnerAnalyticsLink',
+            'learnerVocabularyLink', 'learnerLearningPlanLink', 'learnerPracticeVocabLink',
+            'learnerGrammarResourceLink', 'learnerGrammarPracticeLink',
+            'learnerWritingResourceLink', 'learnerWritingPracticeLink',
+            'learnerListeningResourceLink', 'learnerListeningPracticeLink'
+        ];
+        learnerElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    } else {
+        // Show learner sections and links
+        const learnerElements = [
+            'learnerDashboardSection', 'learnerAnalyticsLink',
+            'learnerVocabularyLink', 'learnerLearningPlanLink', 'learnerPracticeVocabLink',
+            'learnerGrammarResourceLink', 'learnerGrammarPracticeLink',
+            'learnerWritingResourceLink', 'learnerWritingPracticeLink',
+            'learnerListeningResourceLink', 'learnerListeningPracticeLink'
+        ];
+        learnerElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = id.includes('Section') ? 'block' : 'flex';
+        });
+        
+        // Hide admin-only sections
+        const adminElements = [
+            'adminPanelSection', 'adminDashboardLink', 'adminUsersLink', 'adminNotificationsLink',
+            'adminVocabAnalyticsLink', 'adminVocabManagementLink', 'adminLearningPlansLink', 'adminPracticeMonitorLink',
+            'adminGrammarManagementLink', 'adminGrammarMonitorLink',
+            'adminWritingManagementLink', 'adminWritingMonitorLink',
+            'adminListeningManagementLink', 'adminListeningMonitorLink'
+        ];
+        adminElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
 }
 
 // Add animation styles
@@ -296,6 +454,76 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Auto-initialize sidebar on every page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof updateSidebarForRole === 'function') {
+            updateSidebarForRole();
+        }
+    });
+} else {
+    // DOM already loaded
+    if (typeof updateSidebarForRole === 'function') {
+        updateSidebarForRole();
+    }
+}
+
 // Console welcome message
 console.log('%c VocabMaster ', 'background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px;');
 console.log('Welcome to VocabMaster - Your English Vocabulary Learning Companion!');
+
+// User Menu Functions
+function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
+}
+
+function updateHeaderUserInfo() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        // Try to get from current user if available
+        setTimeout(updateHeaderUserInfo, 500);
+        return;
+    }
+    
+    const user = JSON.parse(userStr);
+    if (!user || !user.username) return;
+    
+    const avatarElem = document.querySelector('.user-avatar-small');
+    const nameElem = document.querySelector('.user-name-header');
+    const roleElem = document.querySelector('.user-role-header');
+    
+    if (avatarElem) {
+        avatarElem.textContent = user.username.charAt(0).toUpperCase();
+    }
+    if (nameElem) {
+        nameElem.textContent = user.username;
+    }
+    if (roleElem) {
+        // Handle both 'role' and 'is_admin' properties
+        const role = user.role || (user.is_admin ? 'admin' : 'learner');
+        roleElem.textContent = role === 'admin' ? 'Administrator' : 'Learner';
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const userMenu = document.querySelector('.user-menu');
+    if (userMenu && !userMenu.contains(e.target)) {
+        const dropdown = document.querySelector('.user-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
+
+// Auto-initialize header user info on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        updateHeaderUserInfo();
+    });
+} else {
+    updateHeaderUserInfo();
+}

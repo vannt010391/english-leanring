@@ -1,0 +1,844 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - User Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    .btn-add-user {
+        background-color: white;
+        color: #667eea;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-add-user:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .users-table thead {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .users-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .users-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .users-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .role-badge.admin {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .role-badge.learner {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-badge.active {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-badge.inactive {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-edit {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-role {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .btn-role:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-toggle {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .btn-toggle:hover {
+        background-color: #138496;
+    }
+
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .close-btn:hover {
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 10px;
+        background-color: #667eea;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+        background-color: #5568d3;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+
+    .search-bar {
+        margin-bottom: 20px;
+    }
+
+    .search-bar input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- Admin Panel Section (Admin Only) -->
+            <div class="nav-section" id="adminPanelSection" style="display: none;">
+                <div class="nav-section-title">Admin Panel</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item" id="adminDashboardLink" style="display: none;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'admin_users' %}" class="nav-item active" id="adminUsersLink" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
+            </a>
+            <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span>Notification Management</span>
+            </a>
+
+            <!-- Dashboard Section (Learner Only) -->
+            <div class="nav-section" id="learnerDashboardSection" style="display: none;">
+                <div class="nav-section-title">Dashboard</div>
+            </div>
+            <a href="{% url 'analytics' %}" class="nav-item" id="learnerAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+
+            <!-- Vocabulary Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Vocabulary</div>
+            </div>
+            <a href="{% url 'analytics' %}" class="nav-item" id="adminVocabAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="{% url 'admin_vocabulary_management' %}" class="nav-item" id="adminVocabManagementLink" style="display: none;">
+                <i class="fas fa-database"></i>
+                <span>Vocabulary Management</span>
+            </a>
+            <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+                <i class="fas fa-tasks"></i>
+                <span>Learning Plan Management</span>
+            </a>
+            <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Vocabulary (Monitoring)</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" id="learnerVocabularyLink">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'learning_plans' %}" class="nav-item" id="learnerLearningPlanLink">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plan</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item" id="learnerPracticeVocabLink">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice Vocabulary</span>
+            </a>
+
+            <!-- Grammar Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Grammar</div>
+            </div>
+            <a href="/admin/grammar/" class="nav-item" id="adminGrammarManagementLink" style="display: none;">
+                <i class="fas fa-book-reader"></i>
+                <span>Grammar Resource Management</span>
+            </a>
+            <a href="/admin/grammar/practice-monitoring/" class="nav-item" id="adminGrammarMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Grammar (Monitoring)</span>
+            </a>
+            <a href="/grammar/" class="nav-item" id="learnerGrammarResourceLink">
+                <i class="fas fa-book"></i>
+                <span>Grammar Resource</span>
+            </a>
+            <a href="/grammar/practice/" class="nav-item" id="learnerGrammarPracticeLink">
+                <i class="fas fa-pen"></i>
+                <span>Practice Grammar</span>
+            </a>
+
+            <!-- Writing Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Writing</div>
+            </div>
+            <a href="/admin/writing/" class="nav-item" id="adminWritingManagementLink" style="display: none;">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Writing Resource Management</span>
+            </a>
+            <a href="/admin/writing/practice-monitoring/" class="nav-item" id="adminWritingMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Writing (Monitoring)</span>
+            </a>
+            <a href="/writing/" class="nav-item" id="learnerWritingResourceLink">
+                <i class="fas fa-file-alt"></i>
+                <span>Writing Resource</span>
+            </a>
+            <a href="/writing/practice/" class="nav-item" id="learnerWritingPracticeLink">
+                <i class="fas fa-edit"></i>
+                <span>Practice Writing</span>
+            </a>
+
+            <!-- Listening Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Listening</div>
+            </div>
+            <a href="/admin/listening/" class="nav-item" id="adminListeningManagementLink" style="display: none;">
+                <i class="fas fa-volume-up"></i>
+                <span>Listening Resource Management</span>
+            </a>
+            <a href="/admin/listening/practice-monitoring/" class="nav-item" id="adminListeningMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Study / Practice Listening (Monitoring)</span>
+            </a>
+            <a href="/listening/" class="nav-item" id="learnerListeningResourceLink">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Resource</span>
+            </a>
+            <a href="/listening/practice/" class="nav-item" id="learnerListeningPracticeLink">
+                <i class="fas fa-play-circle"></i>
+                <span>Practice Listening</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-role" id="userRole">-</div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">User Management</h2>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="openAddUserModal()">
+                    <i class="fas fa-plus"></i> Add New User
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="admin-container">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search by username or email..." onkeyup="filterUsers()">
+                </div>
+
+                <div id="usersContainer">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading users...
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New User</h2>
+            <button class="close-btn" onclick="closeUserModal()">&times;</button>
+        </div>
+        <form id="userForm" onsubmit="saveUser(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName">
+            </div>
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" id="passwordNote">(Leave blank if not changing)</input>
+            </div>
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" required>
+                    <option value="learner">Learner</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Save User</button>
+        </form>
+    </div>
+</div>
+
+<!-- Role Assignment Modal -->
+<div id="roleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Assign Role</h2>
+            <button class="close-btn" onclick="closeRoleModal()">&times;</button>
+        </div>
+        <form onsubmit="assignRole(event)">
+            <p id="roleUserInfo" style="margin-bottom: 20px; color: #666;"></p>
+            <div class="form-group">
+                <label for="newRole">New Role</label>
+                <select id="newRole" required>
+                    <option value="learner">Learner</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Assign Role</button>
+        </form>
+    </div>
+</div>
+
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allUsers = [];
+    let currentEditingUserId = null;
+    let currentRoleUserId = null;
+
+    // Load users on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUsers();
+    });
+
+    async function loadUsers() {
+        try {
+            const response = await fetch('/api/auth/users/', {
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            allUsers = data.results || data;
+            renderUsers(allUsers);
+        } catch (error) {
+            console.error('Error loading users:', error);
+            document.getElementById('usersContainer').innerHTML = `
+                <div class="empty-state">
+                    <p>Error loading users. Please try again.</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderUsers(users) {
+        if (users.length === 0) {
+            document.getElementById('usersContainer').innerHTML = `
+                <div class="empty-state">
+                    <p>No users found</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        users.forEach(user => {
+            const roleClass = user.role === 'admin' ? 'admin' : 'learner';
+            const statusClass = user.is_active ? 'active' : 'inactive';
+            const statusText = user.is_active ? 'Active' : 'Inactive';
+            const joinedDate = new Date(user.date_joined).toLocaleDateString();
+            const fullName = `${user.first_name} ${user.last_name}`.trim() || '-';
+
+            html += `
+                <tr>
+                    <td><strong>${user.username}</strong></td>
+                    <td>${user.email}</td>
+                    <td>${fullName}</td>
+                    <td><span class="role-badge ${roleClass}">${user.role.toUpperCase()}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${joinedDate}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-action btn-edit" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn-action btn-role" onclick="openRoleModal(${user.id}, '${user.username}', '${user.role}')">Change Role</button>
+                            <button class="btn-action btn-toggle" onclick="toggleUserStatus(${user.id}, ${user.is_active})">${user.is_active ? 'Deactivate' : 'Activate'}</button>
+                            <button class="btn-action btn-delete" onclick="deleteUser(${user.id})">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        document.getElementById('usersContainer').innerHTML = html;
+    }
+
+    function filterUsers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allUsers.filter(user =>
+            user.username.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm)
+        );
+        renderUsers(filtered);
+    }
+
+    function openAddUserModal() {
+        currentEditingUserId = null;
+        document.getElementById('modalTitle').textContent = 'Add New User';
+        document.getElementById('userForm').reset();
+        document.getElementById('password').required = true;
+        document.getElementById('userModal').classList.add('active');
+    }
+
+    function closeUserModal() {
+        document.getElementById('userModal').classList.remove('active');
+        document.getElementById('userForm').reset();
+    }
+
+    async function editUser(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
+
+        currentEditingUserId = userId;
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('username').value = user.username;
+        document.getElementById('email').value = user.email;
+        document.getElementById('firstName').value = user.first_name || '';
+        document.getElementById('lastName').value = user.last_name || '';
+        document.getElementById('role').value = user.role;
+        document.getElementById('password').required = false;
+        document.getElementById('userModal').classList.add('active');
+    }
+
+    async function saveUser(event) {
+        event.preventDefault();
+
+        const userData = {
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            first_name: document.getElementById('firstName').value,
+            last_name: document.getElementById('lastName').value,
+            role: document.getElementById('role').value,
+        };
+
+        const password = document.getElementById('password').value;
+        if (password) {
+            userData.password = password;
+        }
+
+        try {
+            let url = '/api/auth/users/';
+            let method = 'POST';
+
+            if (currentEditingUserId) {
+                url += `${currentEditingUserId}/`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(userData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(JSON.stringify(error));
+            }
+
+            showToast(currentEditingUserId ? 'User updated successfully' : 'User created successfully', 'success');
+            closeUserModal();
+            loadUsers();
+        } catch (error) {
+            console.error('Error saving user:', error);
+            showToast('Error saving user: ' + error.message, 'error');
+        }
+    }
+
+    function openRoleModal(userId, username, currentRole) {
+        currentRoleUserId = userId;
+        document.getElementById('roleUserInfo').textContent = `Change role for ${username} (Current: ${currentRole})`;
+        document.getElementById('newRole').value = currentRole;
+        document.getElementById('roleModal').classList.add('active');
+    }
+
+    function closeRoleModal() {
+        document.getElementById('roleModal').classList.remove('active');
+    }
+
+    async function assignRole(event) {
+        event.preventDefault();
+
+        const newRole = document.getElementById('newRole').value;
+
+        try {
+            const response = await fetch(`/api/auth/users/${currentRoleUserId}/assign_role/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            showToast('Role assigned successfully', 'success');
+            closeRoleModal();
+            loadUsers();
+        } catch (error) {
+            console.error('Error assigning role:', error);
+            showToast('Error assigning role', 'error');
+        }
+    }
+
+    async function toggleUserStatus(userId, isActive) {
+        const action = isActive ? 'deactivate' : 'activate';
+        const endpoint = isActive ? 'deactivate' : 'activate';
+
+        try {
+            const response = await fetch(`/api/auth/users/${userId}/${endpoint}/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            showToast(`User ${action}d successfully`, 'success');
+            loadUsers();
+        } catch (error) {
+            console.error('Error toggling user status:', error);
+            showToast(`Error ${action}ing user`, 'error');
+        }
+    }
+
+    async function deleteUser(userId) {
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/auth/users/${userId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Token ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            showToast('User deleted successfully', 'success');
+            loadUsers();
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            showToast('Error deleting user', 'error');
+        }
+    }
+
+    function showToast(message, type) {
+        const container = document.getElementById('toastContainer') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease;
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        `;
+        document.body.appendChild(container);
+        return container;
+    }
+</script>
+
+<style>
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,216 @@
+I. SIDEBAR STRUCTURE (UPDATED & NORMALIZED)
+1. Admin Role – Sidebar
+a. Admin Panel
+- Dashboard
+- User Management
+- Notification Management
+
+b. Vocabulary
+- Analytics
+- Vocabulary Management
+- Learning Plan Management
+- Practice Vocabulary (Monitoring)
+
+c. Grammar
+- Grammar Resource Management
+- Practice Grammar (Monitoring)
+
+d. Writing
+
+- Writing Resource Management
+- Practice Writing (Monitoring)
+
+e. Listening
+- Listening Resource Management
+- Study / Practice Listening (Monitoring)
+
+2. Learner Role – Sidebar
+a. Dashboard
+- Analytics
+
+b. Vocabulary
+- Vocabulary
+- Learning Plan
+- Practice Vocabulary
+
+c. Grammar
+- Grammar Resource
+- Practice Grammar
+
+d. Writing
+- Writing Resource
+- Practice Writing
+
+e. Listening
+- Listening Resource
+- Practice Listening
+
+II. FEATURES (DETAILED & EXECUTABLE)
+A. Admin Role – Features
+a. Admin Panel
+1. Dashboard
+Mô tả chức năng
+Admin Dashboard hiển thị tổng quan hoạt động hệ thống.
+Functional Requirements
+Hiển thị thống kê:
+tổng số người dùng
+số người dùng đang hoạt động
+tổng số từ vựng (system / user)
+số learning plan đang hoạt động
+số phiên practice mỗi ngày
+Biểu đồ:
+tăng trưởng người dùng
+tần suất học tập
+
+2. User Management
+Xem danh sách người dùng: CRUD người dùng
+Xem chi tiết:
+số learning plan
+tiến trình học
+Kích hoạt / vô hiệu hóa người dùng
+Phân quyền (admin / learner)
+
+3. Notification Management
+Tạo thông báo hệ thống
+Gửi thông báo theo:
+toàn bộ người dùng
+nhóm learner
+Lịch sử gửi thông báo
+
+b. Vocabulary (Admin)
+1. Analytics
+Phân tích:
+từ vựng được học nhiều nhất
+tỷ lệ mastered / review
+topic phổ biến
+Thống kê theo:
+thời gian
+nhóm người dùng
+
+2. Vocabulary Management (không được thay đổi cấu trúc hiện có của hệ thống)
+CRUD System Vocabulary
+Import vocabulary bằng CSV (system scope)
+Gán topic, level
+Không cho learner chỉnh sửa system vocabulary.
+
+3. Learning Plan Management
+Xem danh sách learning plan của người dùng
+Thống kê:
+tỷ lệ hoàn thành
+thời gian học trung bình
+Không chỉnh sửa nội dung plan của learner (read-only)
+
+4. Practice Vocabulary (Monitoring)
+
+Theo dõi:
+số lượt practice
+dạng practice phổ biến
+Phân tích độ khó từ vựng
+
+c. Grammar (Admin)
+1. Grammar Resource Management
+CRUD tài nguyên ngữ pháp
+Phân loại theo:
+topic
+level
+
+2. Practice Grammar (Monitoring)
+Theo dõi:
+kết quả luyện tập
+lỗi thường gặp
+
+d. Writing (Admin)
+1. Writing Resource Management
+Quản lý:
+bài mẫu
+hướng dẫn viết
+Phân loại theo level / mục tiêu
+
+2. Practice Writing (Monitoring)
+Theo dõi:
+số bài luyện viết
+tần suất sử dụng
+
+e. Listening (Admin)
+1. Listening Resource Management
+Quản lý:
+audio
+transcript
+Phân loại theo:
+topic
+level
+
+2. Study / Practice Listening (Monitoring)
+
+Theo dõi:
+số lượt nghe
+thời lượng nghe trung bình
+
+B. Learner Role – Features
+a. Dashboard
+Analytics
+Hiển thị:
+số ngày học liên tiếp
+số từ đã học / đã thuộc
+learning risk level
+Gợi ý:
+học hôm nay
+luyện tập lại từ yếu
+
+b. Vocabulary (Learner)
+1. Vocabulary
+Xem:
+system vocabulary
+personal vocabulary
+
+Thêm từ:
+thủ công
+ngữ cảnh
+CSV import
+Gán topic cho từ cá nhân
+
+2. Learning Plan
+Tạo / chỉnh sửa learning plan:
+tên kế hoạch
+thời gian học
+topic
+level
+Theo dõi tiến trình từng ngày
+Tạo tracking theo từng ngày
+
+3. Practice Vocabulary
+Chọn learning plan
+Chọn hình thức practice:
+flashcard
+điền từ tiếng Anh
+điền nghĩa tiếng Việt
+Tự đánh giá mức độ ghi nhớ
+
+c. Grammar (Learner)
+1. Grammar Resource
+Xem tài liệu ngữ pháp
+Lọc theo level / topic
+
+2. Practice Grammar
+Luyện tập theo bài
+Xem kết quả và lỗi sai
+
+d. Writing (Learner)
+1. Writing Resource
+Xem bài mẫu
+Hướng dẫn viết theo chủ đề
+
+2. Practice Writing
+Thực hành viết
+Lưu bài viết cá nhân
+
+e. Listening (Learner)
+1. Listening Resource
+Nghe audio
+Xem transcript
+
+2. Practice Listening
+Luyện nghe theo bài
+Trả lời câu hỏi hiểu nội dung
+
+

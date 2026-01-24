@@ -10,9 +10,12 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 
 from .models import Vocabulary, VocabularyTopic
-from .serializers import VocabularySerializer, VocabularyListSerializer, CSVImportSerializer
+from .serializers import (
+    VocabularySerializer, VocabularyListSerializer, CSVImportSerializer,
+    SystemVocabularySerializer
+)
 from topics.models import Topic
-from accounts.permissions import IsOwnerOrAdmin
+from accounts.permissions import IsOwnerOrAdmin, IsAdmin
 
 
 class VocabularyPagination(PageNumberPagination):
@@ -38,9 +41,9 @@ class VocabularyViewSet(viewsets.ModelViewSet):
         if user.is_admin():
             base_queryset = queryset
         else:
-            # Learners see system vocab + their own personal vocab
+            # Learners see only their own personal vocab (not system vocab)
             base_queryset = queryset.filter(
-                Q(is_system=True) | Q(owner=user)
+                Q(created_by=user) | Q(owner=user)
             )
 
         # Apply filters from query params
@@ -119,18 +122,30 @@ class VocabularyViewSet(viewsets.ModelViewSet):
     def system(self, request):
         """Get all system vocabulary."""
         queryset = self.get_queryset().filter(is_system=True)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = VocabularyListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = VocabularyListSerializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def personal(self, request):
-        """Get user's personal vocabulary."""
+        """Get user's personal vocabulary (created by the user)."""
         if request.user.is_admin():
             return Response(
                 {'error': 'Admins do not have personal vocabulary.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        queryset = self.get_queryset().filter(owner=request.user, is_system=False)
+        queryset = self.get_queryset().filter(
+            Q(created_by=request.user) | Q(owner=request.user),
+            is_system=False,
+            created_by_role='learner'
+        )
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = VocabularyListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = VocabularyListSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -228,6 +243,7 @@ class VocabularyViewSet(viewsets.ModelViewSet):
                                 source='csv',
                                 is_system=True,
                                 created_by_role='admin',
+                                created_by=request.user,
                                 owner=None
                             )
                         else:
@@ -243,6 +259,7 @@ class VocabularyViewSet(viewsets.ModelViewSet):
                                 source='csv',
                                 is_system=False,
                                 created_by_role='learner',
+                                created_by=request.user,
                                 owner=request.user
                             )
                         is_new = True
@@ -311,3 +328,143 @@ class VocabularyViewSet(viewsets.ModelViewSet):
         vocabulary.learning_status = new_status
         vocabulary.save()
         return Response(VocabularySerializer(vocabulary).data)
+
+class SystemVocabularyViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for admin to manage system/public vocabulary.
+    Only admins can access this endpoint.
+    """
+    queryset = Vocabulary.objects.filter(is_system=True).select_related('owner').prefetch_related('topics').order_by('word')
+    serializer_class = SystemVocabularySerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+    pagination_class = VocabularyPagination
+
+    def get_queryset(self):
+        queryset = Vocabulary.objects.filter(is_system=True).select_related('owner').prefetch_related('topics').order_by('word')
+        
+        # Apply filters from query params
+        search = self.request.query_params.get('search', '').strip()
+        topic_id = self.request.query_params.get('topic', '')
+        word_type = self.request.query_params.get('word_type', '')
+        level = self.request.query_params.get('level', '')
+
+        if search:
+            queryset = queryset.filter(
+                Q(word__icontains=search) | Q(meaning__icontains=search)
+            )
+
+        if topic_id:
+            queryset = queryset.filter(topics__id=topic_id)
+
+        if word_type:
+            queryset = queryset.filter(word_type=word_type)
+
+        if level:
+            queryset = queryset.filter(level=level)
+
+        return queryset.distinct()
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def import_csv(self, request):
+        """Import system vocabulary from CSV file (admin only)."""
+        serializer = CSVImportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        csv_file = serializer.validated_data['file']
+        topic_ids = serializer.validated_data.get('topic_ids', [])
+
+        try:
+            csv_data = csv.DictReader(io.StringIO(csv_file.read().decode('utf-8')))
+            created_count = 0
+            updated_count = 0
+            errors = []
+
+            for row_num, row in enumerate(csv_data, start=2):
+                try:
+                    word = row.get('word', '').strip()
+                    meaning = row.get('meaning', '').strip()
+                    meaning_vi = row.get('meaning_vi', '').strip() or None
+                    phonetics = row.get('phonetics', '').strip() or None
+                    word_type = row.get('word_type', '').strip() or None
+                    level = row.get('level', '').strip() or None
+                    note = row.get('note', '').strip() or None
+                    example_sentence = row.get('example_sentence', '').strip() or None
+
+                    if not word or not meaning:
+                        errors.append(f"Row {row_num}: Missing required fields (word and meaning)")
+                        continue
+
+                    # Check if vocabulary exists (case-insensitive with fallback)
+                    try:
+                        existing_vocab = Vocabulary.objects.filter(word__iexact=word, is_system=True).first()
+                    except:
+                        existing_vocab = Vocabulary.objects.filter(word=word, is_system=True).first()
+
+                    if existing_vocab:
+                        # Update existing
+                        existing_vocab.meaning = meaning
+                        existing_vocab.meaning_vi = meaning_vi
+                        existing_vocab.phonetics = phonetics
+                        existing_vocab.word_type = word_type
+                        existing_vocab.level = level
+                        existing_vocab.note = note
+                        existing_vocab.example_sentence = example_sentence
+                        existing_vocab.save()
+                        updated_count += 1
+                    else:
+                        # Create new
+                        vocabulary = Vocabulary.objects.create(
+                            word=word,
+                            meaning=meaning,
+                            meaning_vi=meaning_vi,
+                            phonetics=phonetics,
+                            word_type=word_type,
+                            level=level,
+                            note=note,
+                            example_sentence=example_sentence,
+                            is_system=True,
+                            created_by_role='admin',
+                            source='csv',
+                            owner=None
+                        )
+                        created_count += 1
+
+                    # Add topics if provided
+                    if topic_ids:
+                        for topic_id in topic_ids:
+                            topic = Topic.objects.get(id=topic_id)
+                            VocabularyTopic.objects.get_or_create(
+                                vocabulary=vocabulary if not existing_vocab else existing_vocab,
+                                topic=topic
+                            )
+
+                except Exception as e:
+                    errors.append(f"Row {row_num}: {str(e)}")
+
+            message = f'Successfully imported {created_count} new system vocabulary items.'
+            if updated_count > 0:
+                message += f' Updated {updated_count} existing items.'
+
+            return Response({
+                'message': message,
+                'created_count': created_count,
+                'updated_count': updated_count,
+                'errors': errors
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to process CSV file: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['delete'])
+    def delete_vocabulary(self, request, pk=None):
+        """Delete a system vocabulary item."""
+        vocabulary = self.get_object()
+        vocabulary.delete()
+        return Response({'message': 'Vocabulary deleted successfully'}, status=status.HTTP_204_NO_CONTENT)

@@ -3,7 +3,7 @@ from django.db.models import Q, Count
 
 from .models import (
     LearningPlan, LearningPlanVocabulary, LearningProgress,
-    LearningSession, PracticeSession, LearnerAnalytics, Notification
+    LearningSession, PracticeSession, LearnerAnalytics, LearningNotification
 )
 from topics.serializers import TopicSerializer
 from topics.models import Topic
@@ -46,13 +46,14 @@ class LearningPlanListSerializer(serializers.ModelSerializer):
     vocabulary_count = serializers.SerializerMethodField()
     progress_summary = serializers.SerializerMethodField()
     total_days = serializers.IntegerField(read_only=True)
+    words_per_session = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = LearningPlan
         fields = [
             'id', 'name', 'start_date', 'end_date', 'daily_study_time',
             'status', 'selected_topics', 'selected_levels', 'vocabulary_count',
-            'progress_summary', 'total_days', 'created_at'
+            'progress_summary', 'total_days', 'words_per_session', 'created_at'
         ]
 
     def get_vocabulary_count(self, obj):
@@ -72,13 +73,15 @@ class LearningPlanDetailSerializer(serializers.ModelSerializer):
     progress_summary = serializers.SerializerMethodField()
     total_days = serializers.IntegerField(read_only=True)
     words_per_day = serializers.IntegerField(read_only=True)
+    words_per_session = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = LearningPlan
         fields = [
             'id', 'name', 'start_date', 'end_date', 'daily_study_time',
             'status', 'selected_topics', 'selected_levels', 'vocabulary_count',
-            'progress_summary', 'total_days', 'words_per_day', 'created_at', 'updated_at'
+            'progress_summary', 'total_days', 'words_per_day', 'words_per_session',
+            'created_at', 'updated_at'
         ]
 
     def get_vocabulary_count(self, obj):
@@ -103,9 +106,11 @@ class LearningPlanCreateSerializer(serializers.ModelSerializer):
         min_length=1
     )
 
+    words_per_session = serializers.IntegerField(min_value=1, default=10)
+
     class Meta:
         model = LearningPlan
-        fields = ['name', 'start_date', 'end_date', 'daily_study_time', 'topic_ids', 'selected_levels']
+        fields = ['name', 'start_date', 'end_date', 'daily_study_time', 'words_per_session', 'topic_ids', 'selected_levels']
 
     def validate(self, data):
         if data['end_date'] <= data['start_date']:
@@ -138,7 +143,25 @@ class LearningPlanCreateSerializer(serializers.ModelSerializer):
                 status='new'
             )
 
+        # Pre-create daily tracking schedule
+        self._create_daily_schedule(plan)
+
         return plan
+
+    def _create_daily_schedule(self, plan):
+        from datetime import timedelta
+        current = plan.start_date
+        while current <= plan.end_date:
+            LearningProgress.objects.get_or_create(
+                user=plan.user,
+                learning_plan=plan,
+                date=current,
+                defaults={
+                    'planned_words': plan.words_per_session,
+                    'status': 'upcoming'
+                }
+            )
+            current += timedelta(days=1)
 
 
 class LearningPlanUpdateSerializer(serializers.ModelSerializer):
@@ -146,7 +169,7 @@ class LearningPlanUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LearningPlan
-        fields = ['name', 'start_date', 'end_date', 'daily_study_time', 'status']
+        fields = ['name', 'start_date', 'end_date', 'daily_study_time', 'words_per_session', 'status']
 
     def validate(self, data):
         start_date = data.get('start_date', self.instance.start_date)
@@ -171,7 +194,7 @@ class LearningProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LearningProgress
-        fields = ['id', 'date', 'words_studied', 'words_mastered', 'words_review_required', 'study_time_minutes']
+        fields = ['id', 'date', 'planned_words', 'status', 'words_studied', 'words_mastered', 'words_review_required', 'study_time_minutes']
         read_only_fields = ['id']
 
 
@@ -302,7 +325,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Notification
+        model = LearningNotification
         fields = [
             'id', 'notification_type', 'title', 'message',
             'learning_plan', 'learning_plan_name', 'is_read', 'created_at'
