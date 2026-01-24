@@ -8,60 +8,145 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo">
+            <a href="{% url 'dashboard' %}" class="sidebar-logo">
                 <div class="sidebar-logo-icon">
                     <i class="fas fa-book-open"></i>
                 </div>
                 <span class="sidebar-logo-text">VocabMaster</span>
-            </div>
+            </a>
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">Menu</div>
+            <!-- Admin Panel Section (Admin Only) -->
+            <div class="nav-section" id="adminPanelSection" style="display: none;">
+                <div class="nav-section-title">Admin Panel</div>
             </div>
-            <a href="{% url 'dashboard' %}" class="nav-item">
+            <a href="{% url 'dashboard' %}" class="nav-item" id="adminDashboardLink" style="display: none;">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="{% url 'vocabulary_list' %}" class="nav-item">
-                <i class="fas fa-spell-check"></i>
-                <span>Vocabulary</span>
+            <a href="{% url 'admin_users' %}" class="nav-item" id="adminUsersLink" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
             </a>
-            <a href="{% url 'topics_list' %}" class="nav-item">
-                <i class="fas fa-tags"></i>
-                <span>Topics</span>
+            <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span>Notification Management</span>
             </a>
 
-            <div class="nav-section">
-                <div class="nav-section-title">Learning</div>
+            <!-- Dashboard Section (Learner Only) -->
+            <div class="nav-section" id="learnerDashboardSection" style="display: none;">
+                <div class="nav-section-title">Dashboard</div>
             </div>
-            <a href="{% url 'learning_plans' %}" class="nav-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Learning Plans</span>
+            <a href="{% url 'analytics' %}" class="nav-item" id="learnerAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
             </a>
-            <a href="{% url 'practice' %}" class="nav-item active">
-                <i class="fas fa-graduation-cap"></i>
-                <span>Practice</span>
-            </a>
-            <a href="{% url 'analytics' %}" class="nav-item">
+
+            <!-- Vocabulary Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Vocabulary</div>
+            </div>
+            <a href="{% url 'admin_analytics' %}" class="nav-item" id="adminVocabAnalyticsLink" style="display: none;">
                 <i class="fas fa-chart-line"></i>
                 <span>Analytics</span>
             </a>
-        </nav>
+            <a href="{% url 'admin_vocabulary_management' %}" class="nav-item" id="adminVocabManagementLink" style="display: none;">
+                <i class="fas fa-database"></i>
+                <span>Vocabulary Management</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" id="adminTopicsLink" style="display: none;">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+            <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+                <i class="fas fa-tasks"></i>
+                <span>Learning Plan Management</span>
+            </a>
+            <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Vocabulary (Monitoring)</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" id="learnerVocabularyLink">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" id="learnerTopicsLink">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+            <a href="{% url 'learning_plans' %}" class="nav-item" id="learnerLearningPlanLink">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plan</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item active" id="learnerPracticeVocabLink">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice Vocabulary</span>
+            </a>
 
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName">Loading...</div>
-                    <div class="user-role" id="userRole">-</div>
-                </div>
-                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+            <!-- Grammar Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Grammar</div>
             </div>
-        </div>
+            <a href="/admin/grammar/" class="nav-item" id="adminGrammarManagementLink" style="display: none;">
+                <i class="fas fa-book-reader"></i>
+                <span>Grammar Resource Management</span>
+            </a>
+            <a href="/admin/grammar/practice-monitoring/" class="nav-item" id="adminGrammarMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Grammar (Monitoring)</span>
+            </a>
+            <a href="/grammar/" class="nav-item" id="learnerGrammarResourceLink">
+                <i class="fas fa-book"></i>
+                <span>Grammar Resource</span>
+            </a>
+            <a href="/grammar/practice/" class="nav-item" id="learnerGrammarPracticeLink">
+                <i class="fas fa-pen"></i>
+                <span>Practice Grammar</span>
+            </a>
+
+            <!-- Writing Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Writing</div>
+            </div>
+            <a href="/admin/writing/" class="nav-item" id="adminWritingManagementLink" style="display: none;">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Writing Resource Management</span>
+            </a>
+            <a href="/admin/writing/practice-monitoring/" class="nav-item" id="adminWritingMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Writing (Monitoring)</span>
+            </a>
+            <a href="/writing/" class="nav-item" id="learnerWritingResourceLink">
+                <i class="fas fa-file-alt"></i>
+                <span>Writing Resource</span>
+            </a>
+            <a href="/writing/practice/" class="nav-item" id="learnerWritingPracticeLink">
+                <i class="fas fa-edit"></i>
+                <span>Practice Writing</span>
+            </a>
+
+            <!-- Listening Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Listening</div>
+            </div>
+            <a href="/admin/listening/" class="nav-item" id="adminListeningManagementLink" style="display: none;">
+                <i class="fas fa-volume-up"></i>
+                <span>Listening Resource Management</span>
+            </a>
+            <a href="/admin/listening/practice-monitoring/" class="nav-item" id="adminListeningMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Study / Practice Listening (Monitoring)</span>
+            </a>
+            <a href="/listening/" class="nav-item" id="learnerListeningResourceLink">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Resource</span>
+            </a>
+            <a href="/listening/practice/" class="nav-item" id="learnerListeningPracticeLink">
+                <i class="fas fa-play-circle"></i>
+                <span>Practice Listening</span>
+            </a>
+        </nav>
     </aside>
 
     <!-- Main Content -->
@@ -72,6 +157,34 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <h2 class="header-title">Practice</h2>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+                <div class="user-menu">
+                    <div class="user-info-header" onclick="toggleUserMenu()">
+                        <div class="user-avatar-small" id="userAvatarHeader">U</div>
+                        <div class="user-details-header">
+                            <div class="user-name-header" id="userNameHeader">Loading...</div>
+                            <div class="user-role-header" id="userRoleHeader">-</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="{% url 'dashboard' %}" class="dropdown-item">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-cog"></i> Profile Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="logout(); return false;" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -268,11 +381,36 @@ function checkAuth() {
     }
 }
 
+function updateSidebarForRole() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.role === 'admin';
+
+    const adminLinks = [
+        'adminVocabAnalyticsLink',
+        'adminVocabManagementLink',
+        'adminTopicsLink',
+        'adminLearningPlansLink',
+        'adminPracticeMonitorLink'
+    ];
+
+    adminLinks.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isAdmin ? 'flex' : 'none';
+    });
+}
+
 function loadUserInfo() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('userName').textContent = user.username || 'User';
-    document.getElementById('userRole').textContent = user.role || 'learner';
-    document.getElementById('userAvatar').textContent = (user.username || 'U')[0].toUpperCase();
+    const userNameElem = document.getElementById('userName');
+    const userRoleElem = document.getElementById('userRole');
+    const userAvatarElem = document.getElementById('userAvatar');
+    
+    if (userNameElem) userNameElem.textContent = user.username || 'User';
+    if (userRoleElem) userRoleElem.textContent = user.role || 'learner';
+    if (userAvatarElem) userAvatarElem.textContent = (user.username || 'U')[0].toUpperCase();
+    
+    updateHeaderUserInfo();
+    updateSidebarForRole();
 }
 
 async function loadPlans() {

@@ -8,10 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db.models import Q
+from datetime import timedelta
 
 from .models import (
     LearningPlan, LearningPlanVocabulary, LearningProgress,
-    LearningSession, PracticeSession, LearnerAnalytics, Notification
+    LearningSession, PracticeSession, LearnerAnalytics, LearningNotification
 )
 from .serializers import (
     LearningPlanListSerializer, LearningPlanDetailSerializer,
@@ -45,9 +46,13 @@ class LearningPlanViewSet(viewsets.ModelViewSet):
     pagination_class = LearningPlanPagination
 
     def get_queryset(self):
-        return LearningPlan.objects.filter(
+        qs = LearningPlan.objects.filter(
             user=self.request.user
         ).prefetch_related('selected_topics')
+        status_filter = self.request.query_params.get('status', '')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -57,6 +62,11 @@ class LearningPlanViewSet(viewsets.ModelViewSet):
         elif self.action == 'retrieve':
             return LearningPlanDetailSerializer
         return LearningPlanListSerializer
+
+    def perform_update(self, serializer):
+        plan = serializer.save()
+        self._sync_daily_schedule(plan)
+        return plan
 
     @action(detail=True, methods=['get'])
     def vocabulary(self, request, pk=None):
@@ -162,7 +172,9 @@ class LearningPlanViewSet(viewsets.ModelViewSet):
             defaults={
                 'words_studied': 0,
                 'words_mastered': 0,
-                'words_review_required': 0
+                'words_review_required': 0,
+                'planned_words': plan.words_per_session,
+                'status': 'upcoming'
             }
         )
 
@@ -171,21 +183,62 @@ class LearningPlanViewSet(viewsets.ModelViewSet):
             progress.words_mastered += 1
         elif new_status == 'review_required':
             progress.words_review_required += 1
+
+        # Mark completion if target reached
+        target = progress.planned_words or plan.words_per_session
+        if progress.words_studied >= target:
+            progress.status = 'completed'
         progress.save()
 
     @action(detail=True, methods=['get'])
     def progress(self, request, pk=None):
         """Get daily progress for this learning plan."""
         plan = self.get_object()
-        days = int(request.query_params.get('days', 30))
+        self._sync_daily_schedule(plan)
 
-        progress = LearningProgress.objects.filter(
+        qs = LearningProgress.objects.filter(
             learning_plan=plan,
             user=request.user
-        ).order_by('-date')[:days]
+        ).order_by('date')
 
-        serializer = LearningProgressSerializer(progress, many=True)
+        days = request.query_params.get('days')
+        if days and days.isdigit():
+            days_int = int(days)
+            qs = qs.order_by('-date')[:days_int]
+            qs = qs.order_by('date')
+
+        serializer = LearningProgressSerializer(qs, many=True)
         return Response(serializer.data)
+
+    def _sync_daily_schedule(self, plan):
+        today = date.today()
+        # Remove old dates outside plan range
+        LearningProgress.objects.filter(learning_plan=plan).exclude(
+            date__range=(plan.start_date, plan.end_date)
+        ).delete()
+
+        current = plan.start_date
+        while current <= plan.end_date:
+            progress, _ = LearningProgress.objects.get_or_create(
+                user=plan.user,
+                learning_plan=plan,
+                date=current,
+                defaults={
+                    'planned_words': plan.words_per_session,
+                    'status': 'upcoming'
+                }
+            )
+
+            # Keep planned_words aligned with plan settings
+            progress.planned_words = plan.words_per_session
+
+            if progress.words_studied >= progress.planned_words:
+                progress.status = 'completed'
+            else:
+                progress.status = 'missed' if current < today else 'upcoming'
+
+            progress.save()
+            current += timedelta(days=1)
 
     @action(detail=True, methods=['post'])
     def start_session(self, request, pk=None):
@@ -623,12 +676,12 @@ class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        return LearningNotification.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
         """Get count of unread notifications."""
-        count = Notification.objects.filter(
+        count = LearningNotification.objects.filter(
             user=request.user,
             is_read=False
         ).count()
@@ -645,7 +698,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
         """Mark all notifications as read."""
-        Notification.objects.filter(
+        LearningNotification.objects.filter(
             user=request.user,
             is_read=False
         ).update(is_read=True)

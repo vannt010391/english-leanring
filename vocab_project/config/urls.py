@@ -6,7 +6,9 @@ from django.conf.urls.static import static
 from .views import (
     index, login_view, register_view,
     dashboard_view, vocabulary_view, topics_view,
-    learning_plans_view, study_view, practice_view, analytics_view
+    learning_plans_view, study_view, practice_view, analytics_view,
+    admin_users_view, admin_system_vocabulary_view, admin_vocabulary_management_view,
+    admin_analytics_view
 )
 
 urlpatterns = [
@@ -30,6 +32,12 @@ urlpatterns = [
     path('learning/<int:plan_id>/study/', study_view, name='study'),
     path('practice/', practice_view, name='practice'),
     path('analytics/', analytics_view, name='analytics'),
+    
+    # Admin pages
+    path('admin-users/', admin_users_view, name='admin_users'),
+    path('admin-system-vocabulary/', admin_system_vocabulary_view, name='admin_system_vocabulary'),
+    path('admin-vocabulary/', admin_vocabulary_management_view, name='admin_vocabulary_management'),
+    path('admin-analytics/', admin_analytics_view, name='admin_analytics'),
 ]
 
 # Serve static files in development

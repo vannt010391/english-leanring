@@ -1,0 +1,823 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - User Management{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Page Content Spacing */
+.page-content {
+    padding: 1.5rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    margin-top: 0.25rem;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Fancy Table */
+.fancy-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.fancy-table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 0.875rem 0.75rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.fancy-table thead th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.fancy-table thead th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.fancy-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.fancy-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.fancy-table tbody td {
+    padding: 0.875rem 0.75rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.fancy-table tbody tr:last-child td:first-child {
+    border-radius: 0 0 0 8px;
+}
+
+.fancy-table tbody tr:last-child td:last-child {
+    border-radius: 0 0 8px 0;
+}
+
+/* Card Header Enhancement */
+.card-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.card-subtitle {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--gray-100);
+    gap: 1rem;
+}
+
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Enhanced Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.header-title i {
+    color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-content {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+    
+    .card-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .search-box input {
+        width: 100%;
+    }
+    
+    .fancy-table {
+        font-size: 0.875rem;
+    }
+    
+    .fancy-table thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.65rem;
+    }
+    
+    .fancy-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-content {
+        padding: 0.75rem;
+    }
+    
+    .stats-grid {
+        gap: 0.75rem;
+    }
+    
+    .stat-card {
+        padding: 0.875rem;
+    }
+    
+    .card-header {
+        padding: 0.875rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'dashboard' %}" class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <span class="sidebar-logo-text">VocabMaster</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- Admin Panel Section (Admin Only) -->
+            <div class="nav-section" id="adminPanelSection" style="display: none;">
+                <div class="nav-section-title">Admin Panel</div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="nav-item" id="adminDashboardLink" style="display: none;">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'admin_users' %}" class="nav-item active" id="adminUsersLink" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
+            </a>
+            <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span>Notification Management</span>
+            </a>
+
+            <!-- Dashboard Section (Learner Only) -->
+            <div class="nav-section" id="learnerDashboardSection" style="display: none;">
+                <div class="nav-section-title">Dashboard</div>
+            </div>
+            <a href="{% url 'analytics' %}" class="nav-item" id="learnerAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+
+            <!-- Vocabulary Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Vocabulary</div>
+            </div>
+            <a href="{% url 'admin_analytics' %}" class="nav-item" id="adminVocabAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="{% url 'admin_vocabulary_management' %}" class="nav-item" id="adminVocabManagementLink" style="display: none;">
+                <i class="fas fa-database"></i>
+                <span>Vocabulary Management</span>
+            </a>
+            <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+                <i class="fas fa-tasks"></i>
+                <span>Learning Plan Management</span>
+            </a>
+            <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Vocabulary (Monitoring)</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item" id="learnerVocabularyLink">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'learning_plans' %}" class="nav-item" id="learnerLearningPlanLink">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plan</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item" id="learnerPracticeVocabLink">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice Vocabulary</span>
+            </a>
+
+            <!-- Grammar Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Grammar</div>
+            </div>
+            <a href="/admin/grammar/" class="nav-item" id="adminGrammarManagementLink" style="display: none;">
+                <i class="fas fa-book-reader"></i>
+                <span>Grammar Resource Management</span>
+            </a>
+            <a href="/admin/grammar/practice-monitoring/" class="nav-item" id="adminGrammarMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Grammar (Monitoring)</span>
+            </a>
+            <a href="/grammar/" class="nav-item" id="learnerGrammarResourceLink">
+                <i class="fas fa-book"></i>
+                <span>Grammar Resource</span>
+            </a>
+            <a href="/grammar/practice/" class="nav-item" id="learnerGrammarPracticeLink">
+                <i class="fas fa-pen"></i>
+                <span>Practice Grammar</span>
+            </a>
+
+            <!-- Writing Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Writing</div>
+            </div>
+            <a href="/admin/writing/" class="nav-item" id="adminWritingManagementLink" style="display: none;">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Writing Resource Management</span>
+            </a>
+            <a href="/admin/writing/practice-monitoring/" class="nav-item" id="adminWritingMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Writing (Monitoring)</span>
+            </a>
+            <a href="/writing/" class="nav-item" id="learnerWritingResourceLink">
+                <i class="fas fa-file-alt"></i>
+                <span>Writing Resource</span>
+            </a>
+            <a href="/writing/practice/" class="nav-item" id="learnerWritingPracticeLink">
+                <i class="fas fa-edit"></i>
+                <span>Practice Writing</span>
+            </a>
+
+            <!-- Listening Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Listening</div>
+            </div>
+            <a href="/admin/listening/" class="nav-item" id="adminListeningManagementLink" style="display: none;">
+                <i class="fas fa-volume-up"></i>
+                <span>Listening Resource Management</span>
+            </a>
+            <a href="/admin/listening/practice-monitoring/" class="nav-item" id="adminListeningMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Study / Practice Listening (Monitoring)</span>
+            </a>
+            <a href="/listening/" class="nav-item" id="learnerListeningResourceLink">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Resource</span>
+            </a>
+            <a href="/listening/practice/" class="nav-item" id="learnerListeningPracticeLink">
+                <i class="fas fa-play-circle"></i>
+                <span>Practice Listening</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2 class="header-title">
+                    <i class="fas fa-users-cog"></i> User Management
+                </h2>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-icon" onclick="toggleNotifications()" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="user-menu">
+                    <div class="user-info-header" onclick="toggleUserMenu()">
+                        <div class="user-avatar-small" id="userAvatarHeader">U</div>
+                        <div class="user-details-header">
+                            <div class="user-name-header" id="userNameHeader">Loading...</div>
+                            <div class="user-role-header" id="userRoleHeader">-</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="{% url 'dashboard' %}" class="dropdown-item">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-cog"></i> Profile Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="logout(); return false;" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Stats Cards -->
+            <div class="content-wrapper">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalUsersCount">0</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="adminsCount">0</div>
+                            <div class="stat-label">Administrators</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="learnersCount">0</div>
+                            <div class="stat-label">Learners</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="activeUsersCount">0</div>
+                            <div class="stat-label">Active Users</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-content">
+                            <h3 class="card-title">
+                                <i class="fas fa-list"></i> All Users
+                            </h3>
+                            <p class="card-subtitle">Manage and monitor all system users</p>
+                        </div>
+                        <div class="card-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" placeholder="Search users..." id="searchUsers" onkeyup="filterUsers()">
+                            </div>
+                            <button class="btn btn-primary" onclick="openAddUserModal()">
+                                <i class="fas fa-plus"></i> Add New User
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="data-table fancy-table" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> Username</th>
+                                        <th><i class="fas fa-envelope"></i> Email</th>
+                                        <th><i class="fas fa-shield-alt"></i> Role</th>
+                                        <th><i class="fas fa-toggle-on"></i> Status</th>
+                                        <th><i class="fas fa-calendar"></i> Created</th>
+                                        <th><i class="fas fa-cog"></i> Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Data will be loaded here via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Add New User</h3>
+            <button class="modal-close" onclick="closeUserModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="userForm" onsubmit="saveUser(event)">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label for="username">Username <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Optional">
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label for="password">Password <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role <span class="required">*</span></label>
+                    <select id="role" name="role" required>
+                        <option value="learner">Learner</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status <span class="required">*</span></label>
+                    <select id="status" name="status" required>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="{% static 'js/app.js' %}"></script>
+<script>
+let users = [];  // Global users array for stats calculation
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+    updateSidebarForRole();
+    loadUserInfo();
+    loadUsers();
+});
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || user.role !== 'admin') {
+        window.location.href = '{% url "dashboard" %}';
+    }
+}
+
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // Update sidebar user info if elements exist
+    const userNameElem = document.getElementById('userName');
+    const userRoleElem = document.getElementById('userRole');
+    const userAvatarElem = document.getElementById('userAvatar');
+    
+    if (userNameElem) userNameElem.textContent = user.username || 'User';
+    if (userRoleElem) userRoleElem.textContent = user.role === 'admin' ? 'Administrator' : 'Learner';
+    if (userAvatarElem && user.username) {
+        userAvatarElem.textContent = user.username.charAt(0).toUpperCase();
+    }
+    
+    updateHeaderUserInfo();
+}
+
+async function loadUsers() {
+    try {
+        const response = await apiRequest('/api/auth/users/');
+        if (!response.ok) {
+            throw new Error('Failed to load users');
+        }
+        const data = await response.json();
+        users = data.results || data;  // Store globally for stats calculation
+        displayUsers(users);
+        updateStats();  // Update stats after loading users
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showToast('Failed to load users', 'error');
+    }
+}
+
+function displayUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = '';
+
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td></tr>';
+        return;
+    }
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(user.username)}</strong></td>
+            <td>${escapeHtml(user.email)}</td>
+            <td><span class="badge badge-${user.role === 'admin' ? 'danger' : 'success'}">${user.role}</span></td>
+            <td><span class="badge badge-${user.is_active ? 'success' : 'secondary'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>${formatDate(user.date_joined)}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-icon btn-sm btn-primary" onclick="editUser(${user.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-icon btn-sm btn-${user.is_active ? 'warning' : 'success'}" onclick="toggleUserStatus(${user.id}, ${user.is_active})" title="${user.is_active ? 'Deactivate' : 'Activate'}">
+                        <i class="fas fa-${user.is_active ? 'ban' : 'check'}"></i>
+                    </button>
+                    <button class="btn btn-icon btn-sm btn-danger" onclick="deleteUser(${user.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openAddUserModal() {
+    document.getElementById('modalTitle').textContent = 'Add New User';
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    document.getElementById('status').value = 'true'; // Default to Active
+    document.getElementById('passwordGroup').style.display = 'block';
+    document.getElementById('password').required = true;
+    document.getElementById('userModal').classList.add('active');
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').classList.remove('active');
+}
+
+async function editUser(userId) {
+    try {
+        const response = await apiRequest(`/api/auth/users/${userId}/`);
+        if (!response.ok) throw new Error('Failed to load user');
+        
+        const user = await response.json();
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('userId').value = user.id;
+        document.getElementById('username').value = user.username;
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('role').value = user.role;
+        document.getElementById('status').value = user.is_active ? 'true' : 'false';
+        document.getElementById('passwordGroup').style.display = 'none';
+        document.getElementById('password').required = false;
+        document.getElementById('userModal').classList.add('active');
+    } catch (error) {
+        console.error('Error loading user:', error);
+        showToast('Failed to load user details', 'error');
+    }
+}
+
+async function saveUser(event) {
+    event.preventDefault();
+    
+    const userId = document.getElementById('userId').value;
+    const formData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value || '',
+        role: document.getElementById('role').value,
+        is_active: document.getElementById('status').value === 'true'
+    };
+
+    if (!userId || document.getElementById('password').value) {
+        formData.password = document.getElementById('password').value;
+    }
+
+    try {
+        const url = userId ? `/api/auth/users/${userId}/` : '/api/auth/register/';
+        const method = userId ? 'PATCH' : 'POST';
+        
+        const response = await apiRequest(url, {
+            method: method,
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(Object.values(error).flat().join(', '));
+        }
+
+        showToast(userId ? 'User updated successfully' : 'User created successfully', 'success');
+        closeUserModal();
+        loadUsers();
+    } catch (error) {
+        console.error('Error saving user:', error);
+        showToast(error.message || 'Failed to save user', 'error');
+    }
+}
+
+async function toggleUserStatus(userId, currentStatus) {
+    if (!confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this user?`)) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/api/auth/users/${userId}/`, {
+            method: 'PATCH',
+            body: JSON.stringify({ is_active: !currentStatus })
+        });
+
+        if (!response.ok) throw new Error('Failed to update user status');
+
+        showToast('User status updated successfully', 'success');
+        loadUsers();
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        showToast('Failed to update user status', 'error');
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/api/auth/users/${userId}/`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Failed to delete user');
+
+        showToast('User deleted successfully', 'success');
+        loadUsers();
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        showToast('Failed to delete user', 'error');
+    }
+}
+
+function filterUsers() {
+    const searchTerm = document.getElementById('searchUsers').value.toLowerCase();
+    const rows = document.querySelectorAll('#usersTableBody tr');
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function logout() {
+    try {
+        await apiRequest('/api/auth/logout/', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '{% url "login" %}';
+}
+
+// Toggle notifications (placeholder)
+function toggleNotifications() {
+    // TODO: Implement notification panel
+    console.log('Notifications clicked');
+}
+
+// Calculate and display stats
+async function updateStats() {
+    // For now, use the loaded users data
+    const totalUsers = users.length;
+    const admins = users.filter(u => u.role === 'admin').length;
+    const learners = users.filter(u => u.role === 'learner').length;
+    const activeUsers = users.filter(u => u.is_active).length;
+    
+    document.getElementById('totalUsersCount').textContent = totalUsers;
+    document.getElementById('adminsCount').textContent = admins;
+    document.getElementById('learnersCount').textContent = learners;
+    document.getElementById('activeUsersCount').textContent = activeUsers;
+}
+
+// Close modal on overlay click
+document.getElementById('userModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeUserModal();
+    }
+});
+</script>
+{% endblock %}

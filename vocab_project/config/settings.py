@@ -44,6 +44,10 @@ INSTALLED_APPS = [
     'topics',
     'vocabulary',
     'learning',
+    'grammar',
+    'writing',
+    'listening',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -134,6 +138,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
+# Login URL for @login_required redirects
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -147,3 +155,4 @@ REST_FRAMEWORK = {
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

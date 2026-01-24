@@ -8,60 +8,145 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo">
+            <a href="{% url 'dashboard' %}" class="sidebar-logo">
                 <div class="sidebar-logo-icon">
                     <i class="fas fa-book-open"></i>
                 </div>
                 <span class="sidebar-logo-text">VocabMaster</span>
-            </div>
+            </a>
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">Menu</div>
+            <!-- Admin Panel Section (Admin Only) -->
+            <div class="nav-section" id="adminPanelSection" style="display: none;">
+                <div class="nav-section-title">Admin Panel</div>
             </div>
-            <a href="{% url 'dashboard' %}" class="nav-item" data-page="dashboard">
+            <a href="{% url 'dashboard' %}" class="nav-item" id="adminDashboardLink" style="display: none;">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="{% url 'vocabulary_list' %}" class="nav-item active" data-page="vocabulary">
-                <i class="fas fa-spell-check"></i>
-                <span>Vocabulary</span>
+            <a href="{% url 'admin_users' %}" class="nav-item" id="adminUsersLink" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <span>User Management</span>
             </a>
-            <a href="{% url 'topics_list' %}" class="nav-item" data-page="topics">
-                <i class="fas fa-tags"></i>
-                <span>Topics</span>
+            <a href="/admin/notifications/" class="nav-item" id="adminNotificationsLink" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span>Notification Management</span>
             </a>
 
-            <div class="nav-section">
-                <div class="nav-section-title">Learning</div>
+            <!-- Dashboard Section (Learner Only) -->
+            <div class="nav-section" id="learnerDashboardSection" style="display: none;">
+                <div class="nav-section-title">Dashboard</div>
             </div>
-            <a href="{% url 'learning_plans' %}" class="nav-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Learning Plans</span>
+            <a href="{% url 'analytics' %}" class="nav-item" id="learnerAnalyticsLink" style="display: none;">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
             </a>
-            <a href="{% url 'practice' %}" class="nav-item">
-                <i class="fas fa-graduation-cap"></i>
-                <span>Practice</span>
-            </a>
-            <a href="{% url 'analytics' %}" class="nav-item">
+
+            <!-- Vocabulary Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Vocabulary</div>
+            </div>
+            <a href="{% url 'admin_analytics' %}" class="nav-item" id="adminVocabAnalyticsLink" style="display: none;">
                 <i class="fas fa-chart-line"></i>
                 <span>Analytics</span>
             </a>
-        </nav>
+            <a href="{% url 'admin_vocabulary_management' %}" class="nav-item" id="adminVocabManagementLink" style="display: none;">
+                <i class="fas fa-database"></i>
+                <span>Vocabulary Management</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" id="adminTopicsLink" style="display: none;">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+            <a href="/admin/learning-plans/" class="nav-item" id="adminLearningPlansLink" style="display: none;">
+                <i class="fas fa-tasks"></i>
+                <span>Learning Plan Management</span>
+            </a>
+            <a href="/admin/practice-monitoring/" class="nav-item" id="adminPracticeMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Vocabulary (Monitoring)</span>
+            </a>
+            <a href="{% url 'vocabulary_list' %}" class="nav-item active" id="learnerVocabularyLink">
+                <i class="fas fa-spell-check"></i>
+                <span>Vocabulary</span>
+            </a>
+            <a href="{% url 'topics_list' %}" class="nav-item" id="learnerTopicsLink">
+                <i class="fas fa-tags"></i>
+                <span>Topics</span>
+            </a>
+            <a href="{% url 'learning_plans' %}" class="nav-item" id="learnerLearningPlanLink">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Learning Plan</span>
+            </a>
+            <a href="{% url 'practice' %}" class="nav-item" id="learnerPracticeVocabLink">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Practice Vocabulary</span>
+            </a>
 
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName">Loading...</div>
-                    <div class="user-role" id="userRole">-</div>
-                </div>
-                <button class="btn btn-icon btn-secondary" onclick="logout()" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+            <!-- Grammar Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Grammar</div>
             </div>
-        </div>
+            <a href="/admin/grammar/" class="nav-item" id="adminGrammarManagementLink" style="display: none;">
+                <i class="fas fa-book-reader"></i>
+                <span>Grammar Resource Management</span>
+            </a>
+            <a href="/admin/grammar/practice-monitoring/" class="nav-item" id="adminGrammarMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Grammar (Monitoring)</span>
+            </a>
+            <a href="/grammar/" class="nav-item" id="learnerGrammarResourceLink">
+                <i class="fas fa-book"></i>
+                <span>Grammar Resource</span>
+            </a>
+            <a href="/grammar/practice/" class="nav-item" id="learnerGrammarPracticeLink">
+                <i class="fas fa-pen"></i>
+                <span>Practice Grammar</span>
+            </a>
+
+            <!-- Writing Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Writing</div>
+            </div>
+            <a href="/admin/writing/" class="nav-item" id="adminWritingManagementLink" style="display: none;">
+                <i class="fas fa-pen-fancy"></i>
+                <span>Writing Resource Management</span>
+            </a>
+            <a href="/admin/writing/practice-monitoring/" class="nav-item" id="adminWritingMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Practice Writing (Monitoring)</span>
+            </a>
+            <a href="/writing/" class="nav-item" id="learnerWritingResourceLink">
+                <i class="fas fa-file-alt"></i>
+                <span>Writing Resource</span>
+            </a>
+            <a href="/writing/practice/" class="nav-item" id="learnerWritingPracticeLink">
+                <i class="fas fa-edit"></i>
+                <span>Practice Writing</span>
+            </a>
+
+            <!-- Listening Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Listening</div>
+            </div>
+            <a href="/admin/listening/" class="nav-item" id="adminListeningManagementLink" style="display: none;">
+                <i class="fas fa-volume-up"></i>
+                <span>Listening Resource Management</span>
+            </a>
+            <a href="/admin/listening/practice-monitoring/" class="nav-item" id="adminListeningMonitorLink" style="display: none;">
+                <i class="fas fa-eye"></i>
+                <span>Study / Practice Listening (Monitoring)</span>
+            </a>
+            <a href="/listening/" class="nav-item" id="learnerListeningResourceLink">
+                <i class="fas fa-headphones"></i>
+                <span>Listening Resource</span>
+            </a>
+            <a href="/listening/practice/" class="nav-item" id="learnerListeningPracticeLink">
+                <i class="fas fa-play-circle"></i>
+                <span>Practice Listening</span>
+            </a>
+        </nav>
     </aside>
 
     <!-- Main Content -->
@@ -92,6 +177,32 @@
                 <button class="header-btn" onclick="openAddVocabModal()" title="Add Vocabulary">
                     <i class="fas fa-plus"></i>
                 </button>
+                <button class="header-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+                <div class="user-menu">
+                    <div class="user-info-header" onclick="toggleUserMenu()">
+                        <div class="user-avatar-small" id="userAvatarHeader">U</div>
+                        <div class="user-details-header">
+                            <div class="user-name-header" id="userNameHeader">Loading...</div>
+                            <div class="user-role-header" id="userRoleHeader">-</div>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="{% url 'dashboard' %}" class="dropdown-item">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-cog"></i> Profile Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="logout(); return false;" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -136,6 +247,19 @@
                         <option value="C2">C2</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Vocabulary Type Tabs -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                <button class="tab-btn active" id="allVocabTab" onclick="switchVocabTab('all')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 600; color: #667eea; border-bottom: 3px solid #667eea; margin-bottom: -2px;">
+                    📚 All Vocabulary
+                </button>
+                <button class="tab-btn" id="systemVocabTab" onclick="switchVocabTab('system')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 600; color: #999;">
+                    🌐 Published (System)
+                </button>
+                <button class="tab-btn" id="personalVocabTab" onclick="switchVocabTab('personal')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 600; color: #999;">
+                    📝 My Vocabulary
+                </button>
             </div>
 
             <!-- Vocabulary Container -->
@@ -366,9 +490,11 @@ let currentPage = 1;
 let totalPages = 1;
 let totalCount = 0;
 let searchTimeout = null;
+let currentVocabType = 'all'; // 'all', 'system', or 'personal'
 
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
+    updateSidebarForRole();
     loadUserInfo();
     loadTopics();
     loadVocabulary();
@@ -389,9 +515,28 @@ function checkAuth() {
 
 function loadUserInfo() {
     currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('userName').textContent = currentUser.username || 'User';
-    document.getElementById('userRole').textContent = currentUser.role || 'learner';
-    document.getElementById('userAvatar').textContent = (currentUser.username || 'U')[0].toUpperCase();
+    const userNameElem = document.getElementById('userName');
+    const userRoleElem = document.getElementById('userRole');
+    const userAvatarElem = document.getElementById('userAvatar');
+    
+    if (userNameElem) userNameElem.textContent = currentUser.username || 'User';
+    if (userRoleElem) userRoleElem.textContent = currentUser.role || 'learner';
+    if (userAvatarElem) userAvatarElem.textContent = (currentUser.username || 'U')[0].toUpperCase();
+    
+    updateHeaderUserInfo();
+    
+    // Hide/show My Vocabulary tab based on role
+    const personalVocabTab = document.getElementById('personalVocabTab');
+    const isAdmin = currentUser.role === 'admin';
+    
+    if (personalVocabTab) {
+        personalVocabTab.style.display = isAdmin ? 'none' : 'block';
+    }
+    
+    // If admin and on personal tab, switch to all tab
+    if (isAdmin && currentVocabType === 'personal') {
+        switchVocabTab('all');
+    }
 }
 
 function setupSearchDebounce() {
@@ -404,6 +549,25 @@ function setupSearchDebounce() {
             loadVocabulary();
         }, 300);
     });
+}
+
+function switchVocabTab(type) {
+    currentVocabType = type;
+    currentPage = 1;
+    
+    // Update tab styling
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.color = '#999';
+        btn.style.borderBottom = 'none';
+    });
+    
+    const activeTab = document.getElementById(`${type}VocabTab`);
+    activeTab.classList.add('active');
+    activeTab.style.color = '#667eea';
+    activeTab.style.borderBottom = '3px solid #667eea';
+    
+    loadVocabulary();
 }
 
 async function loadTopics() {
@@ -450,8 +614,16 @@ function buildQueryParams() {
 async function loadVocabulary() {
     try {
         showLoading();
+        
+        let endpoint = '/api/vocabulary/';
+        if (currentVocabType === 'system') {
+            endpoint = '/api/vocabulary/system/';
+        } else if (currentVocabType === 'personal') {
+            endpoint = '/api/vocabulary/personal/';
+        }
+        
         const queryString = buildQueryParams();
-        const response = await apiRequest(`/api/vocabulary/?${queryString}`);
+        const response = await apiRequest(`${endpoint}?${queryString}`);
         const data = await response.json();
 
         // Handle paginated response
@@ -618,7 +790,7 @@ function renderVocabulary(vocab) {
 
 function createVocabCard(vocab) {
     const topics = vocab.topics.map(t => `<span class="badge badge-primary">${escapeHtml(t.name)}</span>`).join('');
-    const canEdit = currentUser.role === 'admin' || (!vocab.is_system && vocab.owner === currentUser.id);
+    const canEdit = currentUser.role === 'admin' || (!vocab.is_system && vocab.owner_id === currentUser.id);
 
     // Level badge color
     const levelColors = {
@@ -725,7 +897,7 @@ function createVocabTable(vocab) {
                 </thead>
                 <tbody>
                     ${vocab.map(v => {
-                        const canEdit = currentUser.role === 'admin' || (!v.is_system && v.owner === currentUser.id);
+                        const canEdit = currentUser.role === 'admin' || (!v.is_system && v.owner_id === currentUser.id);
                         return `
                             <tr class="vocab-row" data-id="${v.id}">
                                 <td>
@@ -1067,6 +1239,76 @@ function closeModal(modalId) {
 
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
+}
+
+function updateSidebarForRole() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.role === 'admin';
+    
+    if (isAdmin) {
+        // Show admin-only sections and links
+        document.getElementById('adminPanelSection').style.display = 'block';
+        document.getElementById('adminDashboardLink').style.display = 'flex';
+        document.getElementById('adminUsersLink').style.display = 'flex';
+        document.getElementById('adminNotificationsLink').style.display = 'flex';
+        document.getElementById('adminVocabAnalyticsLink').style.display = 'flex';
+        document.getElementById('adminVocabManagementLink').style.display = 'flex';
+        document.getElementById('adminTopicsLink').style.display = 'flex';
+        document.getElementById('adminLearningPlansLink').style.display = 'flex';
+        document.getElementById('adminPracticeMonitorLink').style.display = 'flex';
+        document.getElementById('adminGrammarManagementLink').style.display = 'flex';
+        document.getElementById('adminGrammarMonitorLink').style.display = 'flex';
+        document.getElementById('adminWritingManagementLink').style.display = 'flex';
+        document.getElementById('adminWritingMonitorLink').style.display = 'flex';
+        document.getElementById('adminListeningManagementLink').style.display = 'flex';
+        document.getElementById('adminListeningMonitorLink').style.display = 'flex';
+        
+        // Hide learner-only sections
+        document.getElementById('learnerDashboardSection').style.display = 'none';
+        document.getElementById('learnerDashboardLink').style.display = 'none';
+        document.getElementById('learnerAnalyticsLink').style.display = 'none';
+        document.getElementById('learnerVocabularyLink').style.display = 'none';
+        document.getElementById('learnerTopicsLink').style.display = 'none';
+        document.getElementById('learnerLearningPlanLink').style.display = 'none';
+        document.getElementById('learnerPracticeVocabLink').style.display = 'none';
+        document.getElementById('learnerGrammarResourceLink').style.display = 'none';
+        document.getElementById('learnerGrammarPracticeLink').style.display = 'none';
+        document.getElementById('learnerWritingResourceLink').style.display = 'none';
+        document.getElementById('learnerWritingPracticeLink').style.display = 'none';
+        document.getElementById('learnerListeningResourceLink').style.display = 'none';
+        document.getElementById('learnerListeningPracticeLink').style.display = 'none';
+    } else {
+        // Show learner sections and links
+        document.getElementById('learnerDashboardSection').style.display = 'block';
+        document.getElementById('learnerDashboardLink').style.display = 'flex';
+        document.getElementById('learnerAnalyticsLink').style.display = 'flex';
+        document.getElementById('learnerVocabularyLink').style.display = 'flex';
+        document.getElementById('learnerTopicsLink').style.display = 'flex';
+        document.getElementById('learnerLearningPlanLink').style.display = 'flex';
+        document.getElementById('learnerPracticeVocabLink').style.display = 'flex';
+        document.getElementById('learnerGrammarResourceLink').style.display = 'flex';
+        document.getElementById('learnerGrammarPracticeLink').style.display = 'flex';
+        document.getElementById('learnerWritingResourceLink').style.display = 'flex';
+        document.getElementById('learnerWritingPracticeLink').style.display = 'flex';
+        document.getElementById('learnerListeningResourceLink').style.display = 'flex';
+        document.getElementById('learnerListeningPracticeLink').style.display = 'flex';
+        
+        // Hide admin-only sections
+        document.getElementById('adminPanelSection').style.display = 'none';
+        document.getElementById('adminDashboardLink').style.display = 'none';
+        document.getElementById('adminUsersLink').style.display = 'none';
+        document.getElementById('adminNotificationsLink').style.display = 'none';
+        document.getElementById('adminVocabAnalyticsLink').style.display = 'none';
+        document.getElementById('adminVocabManagementLink').style.display = 'none';
+        document.getElementById('adminLearningPlansLink').style.display = 'none';
+        document.getElementById('adminPracticeMonitorLink').style.display = 'none';
+        document.getElementById('adminGrammarManagementLink').style.display = 'none';
+        document.getElementById('adminGrammarMonitorLink').style.display = 'none';
+        document.getElementById('adminWritingManagementLink').style.display = 'none';
+        document.getElementById('adminWritingMonitorLink').style.display = 'none';
+        document.getElementById('adminListeningManagementLink').style.display = 'none';
+        document.getElementById('adminListeningMonitorLink').style.display = 'none';
+    }
 }
 
 async function logout() {

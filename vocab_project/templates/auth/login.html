@@ -15,6 +15,7 @@
         </div>
 
         <form class="auth-form" id="loginForm">
+            {% csrf_token %}
             <div class="form-group">
                 <label class="form-label" for="username">
                     <i class="fas fa-user"></i> Username
@@ -77,52 +78,73 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const submitBtn = document.querySelector('.btn-primary');
     const originalBtnHtml = submitBtn.innerHTML;
 
+    // Get redirect URL from query parameter or default to dashboard
+    const urlParams = new URLSearchParams(window.location.search);
+    const nextUrl = urlParams.get('next') || '/dashboard/';
+
     // Disable button and show loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
 
     try {
+        // Get CSRF token
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        console.log('Attempting login for user:', username);
+        
         const response = await fetch('/api/auth/login/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
             },
+            credentials: 'include',  // Important: include cookies for session
             body: JSON.stringify({ username, password })
         });
 
         const data = await response.json();
+        console.log('Login response:', response.status, data);
 
         if (response.ok) {
-            // Check if already logged in
-            if (data.message === 'Already logged in') {
-                showToast('You are already logged in', 'info');
-                setTimeout(() => {
-                    window.location.href = data.redirect || '{% url "dashboard" %}';
-                }, 500);
-                return;
-            }
-
             // Show success icon
             submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Login successful!';
             submitBtn.style.backgroundColor = '#10b981';
             
+            console.log('Storing token and user data...');
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             
+            console.log('Token stored:', localStorage.getItem('token'));
+            console.log('Redirecting to:', nextUrl);
+            
             // Show toast success message
-            showToast('Login successful! Redirecting...', 'success');
+            if (typeof showToast === 'function') {
+                showToast('Login successful! Redirecting...', 'success');
+            }
             
             // Redirect after a short delay to show the success state
             setTimeout(() => {
-                window.location.href = data.redirect || '{% url "dashboard" %}';
+                console.log('Executing redirect now...');
+                // Pass token in header for backend authentication
+                window.location.href = nextUrl;
             }, 500);
         } else {
-            showToast(data.error || 'Login failed', 'error');
+            console.error('Login failed:', data);
+            if (typeof showToast === 'function') {
+                showToast(data.error || 'Login failed', 'error');
+            } else {
+                alert(data.error || 'Login failed');
+            }
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
         }
     } catch (error) {
-        showToast('Network error. Please try again.', 'error');
+        console.error('Login error:', error);
+        if (typeof showToast === 'function') {
+            showToast('Network error. Please try again.', 'error');
+        } else {
+            alert('Network error. Please try again.');
+        }
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnHtml;
     }

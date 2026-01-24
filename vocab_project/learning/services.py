@@ -4,7 +4,7 @@ from django.db.models import Count
 
 from .models import (
     LearningPlan, LearningPlanVocabulary, LearningProgress,
-    PracticeSession, LearnerAnalytics, Notification
+    PracticeSession, LearnerAnalytics, LearningNotification
 )
 
 
@@ -236,7 +236,7 @@ class AnalyticsService:
         today = timezone.now().date()
 
         # Check if notification already sent today
-        existing = Notification.objects.filter(
+        existing = LearningNotification.objects.filter(
             user=user,
             notification_type='risk_alert',
             created_at__date=today
@@ -255,7 +255,7 @@ class AnalyticsService:
             title = "Keep up the momentum!"
             message = "Don't let your progress slip. Take a few minutes to review some vocabulary today."
 
-        Notification.objects.create(
+        LearningNotification.objects.create(
             user=user,
             notification_type='risk_alert',
             title=title,
@@ -311,7 +311,7 @@ class AnalyticsService:
         milestones = [7, 14, 30, 50, 100]
 
         if streak in milestones:
-            Notification.objects.create(
+            LearningNotification.objects.create(
                 user=user,
                 notification_type='streak_achievement',
                 title=f'{streak}-Day Streak!',

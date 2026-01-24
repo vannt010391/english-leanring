@@ -55,6 +55,13 @@ class Vocabulary(models.Model):
     level = models.CharField(max_length=2, choices=LEVEL_CHOICES, blank=True, null=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='manual')
     is_system = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='vocab_created'
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
