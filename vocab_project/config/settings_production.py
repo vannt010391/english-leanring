@@ -22,12 +22,14 @@ MEDIA_URL = '/media/'
 
 # Whitenoise for static files
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     'https://english.iamstudying.tech',
     'https://www.english.iamstudying.tech',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 CSRF_USE_SESSIONS = True
 
